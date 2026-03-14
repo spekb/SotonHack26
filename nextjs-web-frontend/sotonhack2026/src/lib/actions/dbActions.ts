@@ -19,6 +19,9 @@ export type User = {
     total_time: number;
     conversations: Conversation[];
     vocab: string[];
+    native_lang: string;
+    learning_langs: string[];
+    skill_level: number;
 };
 
 // Define Mongoose Schema & Models
@@ -37,7 +40,10 @@ const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
     total_time: Number,
     conversations: [ConversationSchema],
-    vocab: [String]
+    vocab: [String],
+    native_lang: String,
+    learning_langs: [String],
+    skill_level: Number,
 });
 
 // Avoid OverwriteModelError
@@ -62,7 +68,10 @@ export async function getUserById(id: string): Promise<User | null> {
                 dateStamp: conv.dateStamp,
                 length: conv.length
             })),
-            vocab: user.vocab as string[]
+            vocab: user.vocab as string[],
+            native_lang: user.native_lang,
+            learning_langs: user.learning_langs as string[],
+            skill_level: user.skill_level as number
         };
     } catch (error) {
         console.error("Error fetching user by ID:", error);
@@ -88,7 +97,10 @@ export async function getUserByName(name: string): Promise<User | null> {
                 dateStamp: conv.dateStamp,
                 length: conv.length
             })),
-            vocab: user.vocab as string[]
+            vocab: user.vocab as string[],
+            native_lang: user.native_lang,
+            learning_langs: user.learning_langs as string[],
+            skill_level: user.skill_level as number
         };
     } catch (error) {
         console.error("Error fetching user by name:", error);
@@ -119,7 +131,7 @@ export async function getConversationById(id: string): Promise<Conversation | nu
     }
 }
 
-export async function insertUserByName(name: string): Promise<User | null> {
+export async function insertUserByDetails(name: string, native_lang: string, learning_langs: string[], skill_level: number): Promise<User | null> {
     try {
         const id = new mongoose.Types.ObjectId().toString();
         const newUser = new UserModel({
@@ -127,7 +139,10 @@ export async function insertUserByName(name: string): Promise<User | null> {
             name,
             total_time: 0,
             conversations: [],
-            vocab: []
+            vocab: [],
+            native_lang: native_lang,
+            learning_langs: learning_langs,
+            skill_level: skill_level
         });
         
         await newUser.save();
@@ -137,7 +152,10 @@ export async function insertUserByName(name: string): Promise<User | null> {
             name: newUser.name,
             total_time: newUser.total_time as number,
             conversations: [],
-            vocab: []
+            vocab: [],
+            native_lang: newUser.native_lang,
+            learning_langs: newUser.learning_langs as string[],
+            skill_level: newUser.skill_level as number
         };
     } catch (error) {
         console.error("Error inserting user:", error);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { transcribeAudio } from "@/lib/actions/transcribeAction";
+import { transcribeAudioForm } from "@/lib/actions/transcribeAction";
 import type { SpeechToTextChunkResponseModel } from "@elevenlabs/elevenlabs-js/api";
 
 const initialState = {
@@ -11,7 +11,7 @@ const initialState = {
 
 
 export default function UploadPage() {
-  const [state, formAction, isPending] = useActionState(transcribeAudio, initialState);
+  const [state, formAction, isPending] = useActionState(transcribeAudioForm, initialState);
 
   return (
     <main className="min-h-screen p-8 max-w-2xl mx-auto font-sans">
