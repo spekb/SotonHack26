@@ -118,3 +118,73 @@ export async function getConversationById(id: string): Promise<Conversation | nu
         return null;
     }
 }
+
+export async function insertUserByName(name: string): Promise<User | null> {
+    try {
+        const id = new mongoose.Types.ObjectId().toString();
+        const newUser = new UserModel({
+            id,
+            name,
+            total_time: 0,
+            conversations: [],
+            vocab: []
+        });
+        
+        await newUser.save();
+
+        return {
+            id: newUser.id,
+            name: newUser.name,
+            total_time: newUser.total_time as number,
+            conversations: [],
+            vocab: []
+        };
+    } catch (error) {
+        console.error("Error inserting user:", error);
+        return null;
+    }
+}
+
+export async function insertConversation(data: Omit<Conversation, 'id'>): Promise<Conversation | null> {
+    try {
+        const id = new mongoose.Types.ObjectId().toString();
+        const newConversation = new ConversationModel({
+            id,
+            vocab: data.vocab,
+            new_vocab: data.new_vocab,
+            participants: data.participants,
+            topics: data.topics,
+            dateStamp: data.dateStamp,
+            length: data.length
+        });
+        
+        await newConversation.save();
+
+        const savedConv: Conversation = {
+            id: newConversation.id,
+            vocab: newConversation.vocab as string[],
+            new_vocab: newConversation.new_vocab as string[][],
+            participants: (newConversation.participants as any[]).map(p => ({
+                name: p.name,
+                id: p.id
+            })),
+            topics: newConversation.topics as string[],
+            dateStamp: newConversation.dateStamp as Date,
+            length: newConversation.length as number
+        };
+
+        // Add the conversation to the conversations array of each participant
+        const participantIds = data.participants.map(p => p.id);
+        if (participantIds.length > 0) {
+            await UserModel.updateMany(
+                { id: { $in: participantIds } },
+                { $push: { conversations: newConversation } }
+            );
+        }
+
+        return savedConv;
+    } catch (error) {
+        console.error("Error inserting conversation:", error);
+        return null;
+    }
+}
