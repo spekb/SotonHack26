@@ -50,26 +50,21 @@ function CallScreen() {
 
       {/* Top bar */}
       <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+        display: "flex", alignItems: "center",
         padding: "11px 18px", background: "var(--bg-secondary)",
         borderBottom: "0.5px solid var(--border-subtle)",
+        gap: 10,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div className="live-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent-red)" }} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>LinguaLink</span>
-          <span style={{ fontSize: 12, color: "var(--text-faint)" }}>·</span>
-          <span style={{ fontSize: 12, color: "var(--text-faint)", fontFamily: "var(--font-mono, monospace)" }}>{fmt(elapsed)}</span>
-        </div>
-        <div style={{
-          fontSize: 11, color: "var(--text-muted)", background: "var(--bg-tertiary)",
-          borderRadius: 6, padding: "4px 12px", fontWeight: 500,
-        }}>PT → DE</div>
+        <div className="live-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent-red)" }} />
+        <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>LinguaLink</span>
+        <span style={{ fontSize: 12, color: "var(--text-faint)" }}>·</span>
+        <span style={{ fontSize: 12, color: "var(--text-faint)", fontFamily: "var(--font-mono, monospace)" }}>{fmt(elapsed)}</span>
       </div>
 
       {/* Video feeds */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", flex: 1 }}>
 
-        {/* Stranger */}
+        {/* Partner */}
         <div style={{
           position: "relative", background: "#0e0e14",
           borderRight: "0.5px solid var(--border-subtle)",
@@ -83,16 +78,7 @@ function CallScreen() {
               fontSize: 28, fontWeight: 700, color: "var(--accent-blue)",
             }}>M</div>
             <p style={{ fontSize: 15, color: "var(--text-secondary)", fontWeight: 500 }}>Maria</p>
-            <p style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 4 }}>São Paulo, Brazil</p>
           </div>
-
-          {/* Level badge */}
-          <div style={{
-            position: "absolute", top: 12, left: 12,
-            fontSize: 11, color: "var(--accent-blue)",
-            background: "rgba(10,132,255,0.15)", border: "0.5px solid rgba(10,132,255,0.3)",
-            borderRadius: 5, padding: "4px 10px", fontWeight: 600,
-          }}>Native PT</div>
 
           {/* Transcription */}
           <div style={{
@@ -122,7 +108,7 @@ function CallScreen() {
             <p style={{ fontSize: 15, color: "var(--text-secondary)", fontWeight: 500 }}>You</p>
           </div>
 
-          {/* Controls */}
+          {/* Mic / cam controls */}
           <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 6 }}>
             {[
               { label: micOn ? "🎤" : "🔇", active: micOn, toggle: () => setMicOn((v) => !v) },
@@ -146,13 +132,12 @@ function CallScreen() {
         background: "var(--bg-secondary)", borderTop: "0.5px solid var(--border-subtle)",
         borderBottom: "0.5px solid var(--border-subtle)",
       }}>
-        {/* Partner stats */}
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", borderRight: "0.5px solid var(--border-subtle)", alignItems: "center" }}>
           {[
-            { label: "LEVEL",   value: "A2",   color: "var(--accent-blue)" },
-            { label: "SESSIONS",value: "38",   color: "var(--text-secondary)" },
-            { label: "RATING",  value: "4.8",  color: "var(--accent-orange)" },
-            { label: "MATCH",   value: "94%",  color: "var(--accent-purple)" },
+            { label: "LEVEL",    value: "A2",  color: "var(--accent-blue)" },
+            { label: "SESSIONS", value: "38",  color: "var(--text-secondary)" },
+            { label: "RATING",   value: "4.8", color: "var(--accent-orange)" },
+            { label: "MATCH",    value: "94%", color: "var(--accent-purple)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
@@ -160,13 +145,12 @@ function CallScreen() {
             </div>
           ))}
         </div>
-        {/* Your stats */}
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL",     value: "B2",    color: "var(--accent-green)" },
-            { label: "SESSIONS",  value: "142",   color: "var(--text-secondary)" },
-            { label: "VOCAB",     value: "2,340", color: "var(--text-secondary)" },
-            { label: "USED TODAY",value: "47",    color: "var(--accent-orange)" },
+            { label: "LEVEL",      value: "B2",    color: "var(--accent-green)" },
+            { label: "SESSIONS",   value: "142",   color: "var(--text-secondary)" },
+            { label: "VOCAB",      value: "2,340", color: "var(--text-secondary)" },
+            { label: "USED TODAY", value: "47",    color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
