@@ -11,7 +11,7 @@ const TOPICS = [
   { label: "Grammar",       pct: 28, color: "var(--accent-red)" },
 ];
 
-const WEEKS = [38, 52, 47, 68, 60, 65, 80, 90];
+const WEEKS = [32, 52, 47, 68, 60, 65, 80, 90];
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 const CEFR_ACTIVE = 3;
 
@@ -56,21 +56,21 @@ export default function Dashboard() {
 
         <nav style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "13px 20px", background: "var(--bg-secondary)",
+          padding: "14px 20px", background: "var(--bg-secondary)",
           borderBottom: "0.5px solid var(--border-subtle)",
           position: "sticky", top: 0, zIndex: 50,
         }}>
           <Link href="/dashboard" style={{
-            fontSize: 15, fontWeight: 700, color: "var(--text-primary)", textDecoration: "none",
+            fontSize: 17, fontWeight: 700, color: "var(--text-primary)", textDecoration: "none",
           }}>
             LinguaLink
           </Link>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={handleLogout} style={{
-              fontSize: 12, fontWeight: 500, color: "var(--text-muted)",
+              fontSize: 13, fontWeight: 500, color: "var(--text-muted)",
               background: "none", border: "0.5px solid var(--border-subtle)",
-              borderRadius: 7, padding: "5px 12px", cursor: "pointer",
+              borderRadius: 7, padding: "6px 14px", cursor: "pointer",
               fontFamily: "inherit", transition: "color 0.15s, border-color 0.15s",
             }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-red)"; e.currentTarget.style.borderColor = "var(--accent-red)"; }}
@@ -79,10 +79,10 @@ export default function Dashboard() {
               Log out
             </button>
             <div style={{
-              width: 32, height: 32, borderRadius: "50%",
+              width: 34, height: 34, borderRadius: "50%",
               background: "var(--accent-green-bg)", border: "1.5px solid var(--accent-green)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 700, color: "var(--accent-green)",
+              fontSize: 14, fontWeight: 700, color: "var(--accent-green)",
             }}>{userInitial}</div>
           </div>
         </nav>
@@ -92,19 +92,19 @@ export default function Dashboard() {
           {/* CTA */}
           <div style={{
             background: "var(--bg-secondary)", borderRadius: 14,
-            padding: "18px 20px", marginBottom: 14,
+            padding: "20px 22px", marginBottom: 14,
             display: "flex", alignItems: "center", justifyContent: "space-between",
             flexWrap: "wrap", gap: 12,
             border: "0.5px solid var(--border-subtle)",
           }}>
             <div>
-              <p style={{ fontSize: 10, color: "var(--accent-blue)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 4 }}>READY TO PRACTICE</p>
-              <h1 style={{ fontSize: 20, fontWeight: 700, marginBottom: 3 }}>German · B2</h1>
-              <p style={{ fontSize: 12, color: "var(--text-muted)" }}>Matched with native speakers near your level</p>
+              <p style={{ fontSize: 11, color: "var(--accent-blue)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 4 }}>READY TO PRACTICE</p>
+              <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>German · B2</h1>
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Match with speakers near your level</p>
             </div>
             <Link href="/call" style={{
               background: "var(--accent-green)", color: "#fff", borderRadius: 10,
-              padding: "12px 26px", fontSize: 13, fontWeight: 700,
+              padding: "13px 28px", fontSize: 14, fontWeight: 700,
               textDecoration: "none", whiteSpace: "nowrap",
             }}>Start call</Link>
           </div>
@@ -119,11 +119,11 @@ export default function Dashboard() {
             ].map((s) => (
               <div key={s.label} style={{
                 background: "var(--bg-secondary)", borderRadius: 12,
-                padding: "14px 16px", border: "0.5px solid var(--border-subtle)",
+                padding: "16px 18px", border: "0.5px solid var(--border-subtle)",
               }}>
-                <p style={{ fontSize: 9, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.05em", marginBottom: 5 }}>{s.label}</p>
-                <p style={{ fontSize: 24, fontWeight: 700, lineHeight: 1, marginBottom: 4 }}>{s.value}</p>
-                <p style={{ fontSize: 10, color: s.subColor }}>{s.sub}</p>
+                <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.05em", marginBottom: 6 }}>{s.label}</p>
+                <p style={{ fontSize: 26, fontWeight: 700, lineHeight: 1, marginBottom: 5 }}>{s.value}</p>
+                <p style={{ fontSize: 12, color: s.subColor }}>{s.sub}</p>
               </div>
             ))}
           </div>
@@ -131,10 +131,10 @@ export default function Dashboard() {
           {/* Heatmap */}
           <div style={{
             background: "var(--bg-secondary)", borderRadius: 12,
-            padding: "16px 18px", marginBottom: 14,
+            padding: "18px 20px", marginBottom: 14,
             border: "0.5px solid var(--border-subtle)",
           }}>
-            <p style={{ fontSize: 9, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 12 }}>
+            <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 12 }}>
               CONVERSATION ACTIVITY · LAST 24 WEEKS
             </p>
             <div style={{ display: "flex", gap: 3 }}>
@@ -149,34 +149,34 @@ export default function Dashboard() {
               )}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10, justifyContent: "flex-end" }}>
-              <span style={{ fontSize: 9, color: "var(--text-hint)" }}>less</span>
+              <span style={{ fontSize: 11, color: "var(--text-hint)" }}>less</span>
               {["#3a3a3c","#1a3a4a","#0a5080","#0a84ff"].map((c) => (
-                <div key={c} style={{ width: 9, height: 9, borderRadius: 2, background: c }} />
+                <div key={c} style={{ width: 10, height: 10, borderRadius: 2, background: c }} />
               ))}
-              <span style={{ fontSize: 9, color: "var(--text-hint)" }}>more</span>
+              <span style={{ fontSize: 11, color: "var(--text-hint)" }}>more</span>
             </div>
           </div>
 
           {/* Bottom row */}
           <div className="dash-grid-2">
 
-            <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "16px 18px", border: "0.5px solid var(--border-subtle)" }}>
-              <p style={{ fontSize: 9, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 12 }}>POPULAR TOPICS</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
+              <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 14 }}>POPULAR TOPICS</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                 {TOPICS.map((t) => (
                   <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 11, color: "var(--text-secondary)", width: 90, flexShrink: 0 }}>{t.label}</span>
+                    <span style={{ fontSize: 13, color: "var(--text-secondary)", width: 100, flexShrink: 0 }}>{t.label}</span>
                     <div style={{ flex: 1, background: "var(--bg-tertiary)", borderRadius: 3, height: 5 }}>
                       <div style={{ height: "100%", background: t.color, borderRadius: 3, width: `${t.pct}%` }} />
                     </div>
-                    <span style={{ fontSize: 9, color: "var(--text-faint)", minWidth: 28, textAlign: "right" }}>{t.pct}%</span>
+                    <span style={{ fontSize: 11, color: "var(--text-faint)", minWidth: 32, textAlign: "right" }}>{t.pct}%</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "16px 18px", border: "0.5px solid var(--border-subtle)" }}>
-              <p style={{ fontSize: 9, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 12 }}>AVG SESSION LENGTH · WEEKS (MIN)</p>
+            <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
+              <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 14 }}>AVG SESSION LENGTH · WEEKS (MIN)</p>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 64, marginBottom: 10 }}>
                 {WEEKS.map((h, i) => (
                   <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", gap: 4 }}>
@@ -185,17 +185,17 @@ export default function Dashboard() {
                       background: i === WEEKS.length - 1 ? "var(--accent-blue)" : i >= 4 ? "#0a5080" : "var(--bg-tertiary)",
                       border: i === WEEKS.length - 1 ? "0.5px solid #5ab0ff" : "none",
                     }} />
-                    <span style={{ fontSize: 8, color: i === WEEKS.length - 1 ? "var(--accent-blue)" : "var(--text-hint)" }}>w{i + 1}</span>
+                    <span style={{ fontSize: 10, color: i === WEEKS.length - 1 ? "var(--accent-blue)" : "var(--text-hint)" }}>w{i + 1}</span>
                   </div>
                 ))}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
-                <span style={{ fontSize: 9, color: "var(--text-muted)" }}>avg this month</span>
-                <span style={{ fontSize: 10, color: "var(--accent-blue)", fontWeight: 600 }}>22 min</span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>avg this week</span>
+                <span style={{ fontSize: 12, color: "var(--accent-blue)", fontWeight: 600 }}>22 min</span>
               </div>
               <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: 12 }}>
-                <p style={{ fontSize: 9, color: "var(--text-muted)", fontWeight: 600, marginBottom: 7 }}>CEFR · German</p>
-                <div style={{ display: "flex", gap: 4, marginBottom: 5 }}>
+                <p style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginBottom: 8 }}>CEFR · German</p>
+                <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
                   {CEFR_LEVELS.map((l, i) => (
                     <div key={l} style={{
                       flex: 1, height: 5, borderRadius: 3,
@@ -206,7 +206,7 @@ export default function Dashboard() {
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   {CEFR_LEVELS.map((l, i) => (
                     <span key={l} style={{
-                      fontSize: 8,
+                      fontSize: 10,
                       color: i === CEFR_ACTIVE ? "var(--accent-blue)" : "var(--text-hint)",
                       fontWeight: i === CEFR_ACTIVE ? 700 : 400,
                     }}>{l}</span>
