@@ -6,3 +6,4 @@ google-generativeai
 pymongo
 motor
 python-multipart
+pydantic
