@@ -5,7 +5,7 @@ import { transcribeAudioBlob } from "@/lib/actions/transcribeAction";
 import { insertConversation } from "@/lib/actions/dbActions";
 import type { SpeechToTextChunkResponseModel } from "@elevenlabs/elevenlabs-js/api";
 
-export async function responseToConversation(response: SpeechToTextChunkResponseModel, participants: {"name": string, "id": string}[]) : Promise<Omit<Conversation, "id">|null> {
+async function responseToConversation(response: SpeechToTextChunkResponseModel, participants: {"name": string, "id": string}[]) : Promise<Omit<Conversation, "id">|null> {
     if (response.words.length < 1) { return null; }
     
     let users = await Promise.all(participants.map((p) => p.id).map(getUserById));

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { getUserByName } from "@/lib/actions/dbActions";
 import Link from "next/link";
 
 const INPUT = {
@@ -22,7 +23,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setError("");
 
     if (mode === "signup") {
@@ -34,8 +35,12 @@ export default function LoginPage() {
     } else {
       if (!email.trim()) return setError("Please enter your email.");
       const displayName = email.trim().split("@")[0];
-      sessionStorage.setItem("ll_user_name", displayName);
-      router.push("/dashboard");
+      if (await getUserByName(email) == null) {
+        return setError("User account does not exist.");
+      } else {
+        sessionStorage.setItem("ll_user_name", displayName);
+        router.push("/dashboard");
+      }
     }
   };
 

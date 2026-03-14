@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { insertUserByDetails } from "@/lib/actions/dbActions";
 
 type CEFRLevel = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
 
@@ -96,81 +97,7 @@ function StepDots({ step, total }: { step: number; total: number }) {
   );
 }
 
-function FieldBox({ label, value, active, success, placeholder }: {
-  label: string; value?: string; active?: boolean; success?: boolean; placeholder?: string;
-}) {
-  const border = success ? "1.5px solid var(--accent-green)" : active ? "1.5px solid var(--accent-blue)" : "0.5px solid var(--border-subtle)";
-  const lc = success ? "var(--accent-green)" : active ? "var(--accent-blue)" : "var(--text-faint)";
-  return (
-    <div style={{ background: "var(--bg-secondary)", border, borderRadius: 10, padding: "13px 15px", marginBottom: 10 }}>
-      <p style={{ fontSize: 11, color: lc, fontWeight: 600, letterSpacing: "0.05em", marginBottom: 4 }}>{label}</p>
-      <p style={{ fontSize: 14, color: value ? "var(--text-primary)" : "var(--text-hint)" }}>
-        {value || placeholder || ""}
-      </p>
-    </div>
-  );
-}
 
-/* ── Step 1: Account ── */
-function StepAccount({ userName, userEmail, onNext }: {
-  userName: string; userEmail: string; onNext: () => void;
-}) {
-  const firstName = userName.split(" ")[0] || userName;
-  const lastName  = userName.split(" ").slice(1).join(" ") || "";
-
-  return (
-    <div style={{ animation: "fadeIn 0.25s ease" }}>
-      <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 7 }}>STEP 1 OF 5</p>
-      <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 5 }}>Create your account</h2>
-      <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 22 }}>Join thousands of language learners worldwide</p>
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <div style={{ flex: 1 }}><FieldBox label="FIRST NAME" value={firstName || undefined} active placeholder="First name" /></div>
-        <div style={{ flex: 1 }}><FieldBox label="LAST NAME"  value={lastName || undefined} placeholder="Last name" /></div>
-      </div>
-      <FieldBox label="EMAIL"    value={userEmail || undefined} success={!!userEmail} placeholder="you@example.com" />
-      <FieldBox label="PASSWORD" value="••••••••••••" />
-
-      <div style={{ background: "var(--bg-quaternary)", borderRadius: 8, padding: "11px 14px", marginBottom: 16 }}>
-        <p style={{ fontSize: 11, color: "var(--text-faint)", marginBottom: 7, fontWeight: 600 }}>PASSWORD STRENGTH</p>
-        <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
-          {[1,2,3,4].map(i => (
-            <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= 3 ? "var(--accent-green)" : "var(--bg-tertiary)" }} />
-          ))}
-        </div>
-        <p style={{ fontSize: 11, color: "var(--accent-green)", fontWeight: 600 }}>Good — add a symbol to make it strong</p>
-      </div>
-
-      <Btn onClick={onNext}>Continue →</Btn>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "16px 0" }}>
-        <div style={{ flex: 1, height: "0.5px", background: "var(--border-subtle)" }} />
-        <span style={{ fontSize: 11, color: "var(--text-faint)" }}>or sign up with</span>
-        <div style={{ flex: 1, height: "0.5px", background: "var(--border-subtle)" }} />
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-        {["Google","GitHub","Apple"].map(s => (
-          <button key={s} style={{
-            background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)",
-            borderRadius: 10, padding: "12px", cursor: "pointer", fontFamily: "inherit",
-            transition: "border-color 0.15s",
-          }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-blue)"}
-            onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border-subtle)"}
-          >
-            <p style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 500, textAlign: "center" }}>{s}</p>
-          </button>
-        ))}
-      </div>
-
-      <p style={{ textAlign: "center", marginTop: 16, fontSize: 12, color: "var(--text-faint)" }}>
-        Already have an account?{" "}
-        <Link href="/login" style={{ color: "var(--accent-blue)", fontWeight: 600, textDecoration: "none" }}>Sign in</Link>
-      </p>
-    </div>
-  );
-}
 
 /* ── Step 2: Native language ── */
 function StepNative({ native, setNative, onNext, onBack }: {
@@ -492,11 +419,39 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
   cefr: CEFRLevel; duoScore: number; onBack: () => void;
 }) {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const cd = CEFR_DATA[cefr];
   const band = scoreBand(duoScore);
   const nFlag = ALL_LANGS.find(l => l.name === native)?.flag ?? "🏳️";
   const lFlag = ALL_LANGS.find(l => l.name === learn)?.flag ?? "🏳️";
   const initial = userName.charAt(0).toUpperCase() || "?";
+
+  const handleContinue = async () => {
+    setIsSubmitting(true);
+    try {
+      let skillIndex = 0;
+      if (duoScore == 0) {
+        switch (cefr) {
+          case "A1": skillIndex = 10;
+          case "A2": skillIndex = 40;
+          case "B1": skillIndex = 80;
+          case "B2": skillIndex = 115;
+          case "C1": skillIndex = 135;
+          case "C2": skillIndex = 160;
+        }
+      } else {
+        skillIndex = duoScore;
+      }
+      
+      //console.log([userName, native, [learn], skillIndex]);
+      await insertUserByDetails(userName, native, [learn], skillIndex);
+      router.push("/dashboard");
+    } catch (e) {
+      console.error(e);
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div style={{ animation: "fadeIn 0.25s ease" }}>
@@ -575,14 +530,31 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        <Btn onClick={() => router.push("/dashboard")} style={{ fontSize: 15, padding: "15px 0" }}>
-          Start my first call →
+        <Btn onClick={handleContinue} disabled={isSubmitting} style={{ fontSize: 15, padding: "15px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {isSubmitting ? (
+            <>
+              <svg
+                style={{ animation: "spin 1s linear infinite", width: 16, height: 16, marginRight: 8 }}
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
+                <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" fill="currentColor" />
+              </svg>
+              Loading...
+            </>
+          ) : (
+            "Start my first call →"
+          )}
         </Btn>
-        <Btn variant="ghost" onClick={onBack}>← Back</Btn>
+        <Btn variant="ghost" onClick={onBack} disabled={isSubmitting}>← Back</Btn>
       </div>
     </div>
   );
 }
+
 
 /* ── Main page ── */
 export default function OnboardingPage() {
@@ -594,6 +566,8 @@ export default function OnboardingPage() {
   const [userName, setUserName]   = useState("");
   const [userEmail, setUserEmail] = useState("");
 
+  const router = useRouter()
+
   const TOTAL = 5;
 
   useEffect(() => {
@@ -603,6 +577,10 @@ export default function OnboardingPage() {
     setUserEmail(email);
     if (name) setStep(2);
   }, []);
+
+  useEffect(() => {
+
+  }, [step])
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px" }}>
@@ -618,8 +596,7 @@ export default function OnboardingPage() {
         </div>
 
         <div style={{ background: "var(--bg-primary)", border: "0.5px solid var(--border-subtle)", borderTop: "none", borderRadius: "0 0 14px 14px", padding: "26px 24px" }}>
-          {step === 1 && <StepAccount userName={userName} userEmail={userEmail} onNext={() => setStep(2)} />}
-          {step === 2 && <StepNative native={native} setNative={setNative} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+          {step === 2 && <StepNative native={native} setNative={setNative} onNext={() => setStep(3)} onBack={() => router.push("/login")} />}
           {step === 3 && <StepLearn native={native} learn={learn} setLearn={setLearn} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
           {step === 4 && <StepSkill learnLang={learn || "your target language"} cefr={cefr} setCefr={setCefr} duoScore={duoScore} setDuoScore={setDuoScore} onNext={() => setStep(5)} onBack={() => setStep(3)} />}
           {step === 5 && <StepConfirm userName={userName} userEmail={userEmail} native={native} learn={learn} cefr={cefr} duoScore={duoScore} onBack={() => setStep(4)} />}

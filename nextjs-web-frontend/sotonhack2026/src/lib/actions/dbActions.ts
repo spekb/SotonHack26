@@ -1,7 +1,7 @@
 'use server';
 
 import mongoose from 'mongoose';
-import '../mongoose'; // Ensure mongoose is connected
+import { connectDB } from '../mongoose'; // Ensure mongoose is connected
 
 export type Conversation = {
     id: string;
@@ -52,6 +52,7 @@ const UserModel = mongoose.models.User || mongoose.model('User', UserSchema);
 
 export async function getUserById(id: string): Promise<User | null> {
     try {
+        await connectDB();
         const user = await UserModel.findOne({ id }).lean();
         if (!user) return null;
         
@@ -81,6 +82,7 @@ export async function getUserById(id: string): Promise<User | null> {
 
 export async function getUserByName(name: string): Promise<User | null> {
     try {
+        await connectDB();
         const user = await UserModel.findOne({ name }).lean();
         if (!user) return null;
 
@@ -110,6 +112,7 @@ export async function getUserByName(name: string): Promise<User | null> {
 
 export async function getConversationById(id: string): Promise<Conversation | null> {
     try {
+        await connectDB();
         const conversation = await ConversationModel.findOne({ id }).lean();
         if (!conversation) return null;
 
@@ -133,6 +136,7 @@ export async function getConversationById(id: string): Promise<Conversation | nu
 
 export async function insertUserByDetails(name: string, native_lang: string, learning_langs: string[], skill_level: number): Promise<User | null> {
     try {
+        await connectDB();
         const id = new mongoose.Types.ObjectId().toString();
         const newUser = new UserModel({
             id,
@@ -165,6 +169,7 @@ export async function insertUserByDetails(name: string, native_lang: string, lea
 
 export async function insertConversation(data: Omit<Conversation, 'id'>): Promise<Conversation | null> {
     try {
+        await connectDB();
         const id = new mongoose.Types.ObjectId().toString();
         const newConversation = new ConversationModel({
             id,
