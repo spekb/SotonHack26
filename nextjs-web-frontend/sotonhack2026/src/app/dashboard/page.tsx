@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 const TOPICS = [
@@ -25,25 +26,29 @@ function generateHeatmap() {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [heatmap, setHeatmap] = useState<string[][]>([]);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [userInitial, setUserInitial] = useState("?");
 
   useEffect(() => {
     setHeatmap(generateHeatmap());
+    const storedName = sessionStorage.getItem("ll_user_name") || "";
+    setUserInitial(storedName.charAt(0).toUpperCase() || "?");
   }, []);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("ll_user_name");
+    router.push("/login");
+  };
 
   return (
     <>
       <style>{`
         .dash-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
         .dash-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .dash-nav-links { display: flex; gap: 20px; }
-        .dash-hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; flex-direction: column; gap: 4px; }
         @media (max-width: 700px) {
           .dash-grid-4 { grid-template-columns: repeat(2, 1fr); }
           .dash-grid-2 { grid-template-columns: 1fr; }
-          .dash-nav-links { display: none; }
-          .dash-hamburger { display: flex; }
         }
       `}</style>
 
@@ -55,60 +60,32 @@ export default function Dashboard() {
           borderBottom: "0.5px solid var(--border-subtle)",
           position: "sticky", top: 0, zIndex: 50,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            <Link href="/dashboard" style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", textDecoration: "none" }}>
-              LinguaLink
-            </Link>
-            <div className="dash-nav-links">
-              {[
-                { label: "Dashboard",  href: "/dashboard" },
-                { label: "Login",      href: "/login" },
-                { label: "Onboarding", href: "/onboarding" },
-                { label: "Call",       href: "/call" },
-              ].map((n) => (
-                <Link key={n.label} href={n.href} style={{
-                  fontSize: 12, fontWeight: n.href === "/dashboard" ? 600 : 400,
-                  color: n.href === "/dashboard" ? "var(--text-primary)" : "var(--text-muted)",
-                  borderBottom: n.href === "/dashboard" ? "1.5px solid var(--accent-blue)" : "1.5px solid transparent",
-                  paddingBottom: 2, textDecoration: "none", transition: "color 0.15s",
-                }}>{n.label}</Link>
-              ))}
-            </div>
-          </div>
+          <Link href="/dashboard" style={{
+            fontSize: 15, fontWeight: 700, color: "var(--text-primary)", textDecoration: "none",
+          }}>
+            LinguaLink
+          </Link>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button className="dash-hamburger" onClick={() => setMenuOpen(v => !v)} aria-label="Menu">
-              {[0,1,2].map(i => <div key={i} style={{ width: 20, height: 1.5, background: "var(--text-muted)", borderRadius: 1 }} />)}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={handleLogout} style={{
+              fontSize: 12, fontWeight: 500, color: "var(--text-muted)",
+              background: "none", border: "0.5px solid var(--border-subtle)",
+              borderRadius: 7, padding: "5px 12px", cursor: "pointer",
+              fontFamily: "inherit", transition: "color 0.15s, border-color 0.15s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-red)"; e.currentTarget.style.borderColor = "var(--accent-red)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border-subtle)"; }}
+            >
+              Log out
             </button>
-            <Link href="/login" style={{
+            <div style={{
               width: 32, height: 32, borderRadius: "50%",
               background: "var(--accent-green-bg)", border: "1.5px solid var(--accent-green)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 13, fontWeight: 700, color: "var(--accent-green)", textDecoration: "none",
-            }}>Y</Link>
+              fontSize: 13, fontWeight: 700, color: "var(--accent-green)",
+            }}>{userInitial}</div>
           </div>
         </nav>
-
-        {/* Mobile menu */}
-        {menuOpen && (
-          <div style={{
-            background: "var(--bg-secondary)", borderBottom: "0.5px solid var(--border-subtle)",
-            padding: "14px 20px", display: "flex", flexDirection: "column", gap: 14,
-          }}>
-            {[
-              { label: "Dashboard",  href: "/dashboard" },
-              { label: "Login",      href: "/login" },
-              { label: "Onboarding", href: "/onboarding" },
-              { label: "Call",       href: "/call" },
-            ].map((n) => (
-              <Link key={n.label} href={n.href} onClick={() => setMenuOpen(false)} style={{
-                fontSize: 14, fontWeight: 500,
-                color: n.href === "/dashboard" ? "var(--accent-blue)" : "var(--text-muted)",
-                textDecoration: "none",
-              }}>{n.label}</Link>
-            ))}
-          </div>
-        )}
 
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px 16px" }}>
 
@@ -239,7 +216,6 @@ export default function Dashboard() {
             </div>
 
           </div>
-
         </div>
       </div>
     </>

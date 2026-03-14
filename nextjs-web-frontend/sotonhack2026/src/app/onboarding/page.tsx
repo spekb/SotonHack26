@@ -38,7 +38,6 @@ const CEFR_DATA: Record<CEFRLevel, {
 
 const CEFR_ORDER: CEFRLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
-// Duolingo Score (0–160) to CEFR
 function scoreToCefr(score: number): CEFRLevel {
   if (score < 20)  return "A1";
   if (score < 50)  return "A2";
@@ -48,7 +47,6 @@ function scoreToCefr(score: number): CEFRLevel {
   return "C2";
 }
 
-// Score band labels for the slider
 function scoreBand(score: number): { label: string; color: string; desc: string } {
   if (score < 20)  return { label: "Novice",        color: "#ff9f0a", desc: "0 – 19" };
   if (score < 50)  return { label: "Elementary",    color: "#ff9f0a", desc: "20 – 49" };
@@ -137,7 +135,12 @@ function FieldBox({
 /* ─────────────────────────────────────────
    STEP 1 — Account
 ───────────────────────────────────────── */
-function StepAccount({ onNext }: { onNext: () => void }) {
+function StepAccount({ userName, userEmail, onNext }: {
+  userName: string; userEmail: string; onNext: () => void;
+}) {
+  const firstName = userName.split(" ")[0] || userName;
+  const lastName  = userName.split(" ").slice(1).join(" ") || "";
+
   return (
     <div style={{ animation: "fadeIn 0.25s ease" }}>
       <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 6 }}>STEP 1 OF 5</p>
@@ -145,10 +148,10 @@ function StepAccount({ onNext }: { onNext: () => void }) {
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 22 }}>Join thousands of language learners worldwide</p>
 
       <div style={{ display: "flex", gap: 8 }}>
-        <div style={{ flex: 1 }}><FieldBox label="FIRST NAME" value="Yusuf" active /></div>
-        <div style={{ flex: 1 }}><FieldBox label="LAST NAME"  value="Klein" /></div>
+        <div style={{ flex: 1 }}><FieldBox label="FIRST NAME" value={firstName || undefined} active placeholder="First name" /></div>
+        <div style={{ flex: 1 }}><FieldBox label="LAST NAME"  value={lastName || undefined} placeholder="Last name" /></div>
       </div>
-      <FieldBox label="EMAIL"    value="yusuf@example.com" success />
+      <FieldBox label="EMAIL"    value={userEmail || undefined} success={!!userEmail} placeholder="you@example.com" />
       <FieldBox label="PASSWORD" value="••••••••••••" />
 
       <div style={{ background: "var(--bg-quaternary)", borderRadius: 8, padding: "10px 13px", marginBottom: 16 }}>
@@ -214,7 +217,6 @@ function StepNative({
         This is the language you'll be teaching your conversation partner
       </p>
 
-      {/* Search */}
       <div style={{
         background: "var(--bg-secondary)", border: "1.5px solid var(--accent-blue)",
         borderRadius: 10, padding: "10px 14px", marginBottom: 12,
@@ -288,8 +290,9 @@ function StepLearn({
       <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 6 }}>STEP 3 OF 5</p>
       <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>What do you want to learn?</h2>
       <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 20 }}>
-        We'll match you with native speakers of this language who want to learn{" "}
+        We'll match you with learners at a similar level who also speak{" "}
         <span style={{ color: "var(--accent-blue)", fontWeight: 600 }}>{native}</span>
+        {" "}— you'll teach each other
       </p>
 
       <div style={{
@@ -364,7 +367,6 @@ function StepSkill({
   const scoreCd = CEFR_DATA[scoreCefr];
   const band = scoreBand(duoScore);
 
-  // Sync CEFR when score changes in duolingo mode
   useEffect(() => {
     if (method === "duolingo") setCefr(scoreToCefr(duoScore));
   }, [duoScore, method]);
@@ -394,7 +396,6 @@ function StepSkill({
         Helps us find the best conversation partners for you
       </p>
 
-      {/* Method selector */}
       <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
         <button style={methodBtnStyle("cefr")}    onClick={() => setMethod("cefr")}>CEFR score</button>
         <button style={methodBtnStyle("duolingo")} onClick={() => setMethod("duolingo")}>Duolingo score</button>
@@ -407,8 +408,6 @@ function StepSkill({
           <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.05em", marginBottom: 10 }}>
             SELECT YOUR CEFR LEVEL
           </p>
-
-          {/* Level buttons */}
           <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
             {CEFR_ORDER.map(l => {
               const d = CEFR_DATA[l];
@@ -425,8 +424,6 @@ function StepSkill({
               );
             })}
           </div>
-
-          {/* Description card */}
           <div style={{
             background: cd.bg, border: `0.5px solid ${cd.border}`,
             borderRadius: 11, padding: "14px 16px", marginBottom: 14,
@@ -441,8 +438,6 @@ function StepSkill({
             </div>
             <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>{cd.desc}</p>
           </div>
-
-          {/* Visual scale */}
           <div style={{ background: "var(--bg-secondary)", borderRadius: 10, padding: "12px 14px", marginBottom: 4 }}>
             <p style={{ fontSize: 9, color: "var(--text-faint)", fontWeight: 600, marginBottom: 10 }}>PROFICIENCY SCALE</p>
             <div style={{ position: "relative", height: 8, background: "var(--bg-tertiary)", borderRadius: 4, marginBottom: 8 }}>
@@ -467,7 +462,6 @@ function StepSkill({
       {/* ── Duolingo Score method ── */}
       {method === "duolingo" && (
         <div style={{ animation: "fadeIn 0.2s ease" }}>
-          {/* Explainer */}
           <div style={{
             background: "#0f2200", border: "0.5px solid #2a5500",
             borderRadius: 10, padding: "10px 14px", marginBottom: 14,
@@ -479,12 +473,10 @@ function StepSkill({
             </p>
           </div>
 
-          {/* Score display */}
           <div style={{
             background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)",
             borderRadius: 12, padding: "20px 18px", marginBottom: 14,
           }}>
-            {/* Big score number */}
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <p style={{ fontSize: 9, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 8 }}>YOUR DUOLINGO SCORE</p>
               <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 6 }}>
@@ -505,7 +497,6 @@ function StepSkill({
               </div>
             </div>
 
-            {/* Slider */}
             <input
               type="range" min={0} max={160} step={1} value={duoScore}
               onChange={e => setDuoScore(Number(e.target.value))}
@@ -516,9 +507,7 @@ function StepSkill({
               <span style={{ fontSize: 10, color: "var(--text-hint)" }}>160</span>
             </div>
 
-            {/* Score band markers */}
             <div style={{ position: "relative", marginBottom: 6 }}>
-              {/* Background track */}
               <div style={{ height: 6, borderRadius: 3, overflow: "hidden", display: "flex", marginBottom: 8 }}>
                 {[
                   { color: "#ff9f0a", w: 20/160*100 },
@@ -536,7 +525,6 @@ function StepSkill({
                   }} />
                 ))}
               </div>
-              {/* Score position indicator */}
               <div style={{
                 position: "absolute", top: -2,
                 left: `calc(${duoScore / 160 * 100}% - 5px)`,
@@ -547,7 +535,7 @@ function StepSkill({
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              {["A1","A2","B1","B2","C1","C2"].map((l, i) => (
+              {["A1","A2","B1","B2","C1","C2"].map((l) => (
                 <span key={l} style={{
                   fontSize: 9, fontWeight: l === scoreCefr ? 700 : 400,
                   color: l === scoreCefr ? scoreCd.color : "var(--text-hint)",
@@ -557,7 +545,6 @@ function StepSkill({
             </div>
           </div>
 
-          {/* Mapped CEFR */}
           <div style={{
             background: scoreCd.bg, border: `0.5px solid ${scoreCd.border}`,
             borderRadius: 10, padding: "13px 14px",
@@ -586,15 +573,14 @@ function StepSkill({
           <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16, lineHeight: 1.6 }}>
             No problem — just give us a rough idea and we'll refine your match over time.
           </p>
-
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 4 }}>
             {[
-              { label: "I'm a complete beginner",       emoji: "🌱", level: "A1" as CEFRLevel },
+              { label: "I'm a complete beginner",        emoji: "🌱", level: "A1" as CEFRLevel },
               { label: "I know a few words and phrases", emoji: "📖", level: "A2" as CEFRLevel },
               { label: "I can hold basic conversations", emoji: "💬", level: "B1" as CEFRLevel },
-              { label: "I'm fairly comfortable",        emoji: "🗣️", level: "B2" as CEFRLevel },
-              { label: "I'm quite advanced",            emoji: "🎓", level: "C1" as CEFRLevel },
-              { label: "I'm nearly fluent",             emoji: "⭐", level: "C2" as CEFRLevel },
+              { label: "I'm fairly comfortable",         emoji: "🗣️", level: "B2" as CEFRLevel },
+              { label: "I'm quite advanced",             emoji: "🎓", level: "C1" as CEFRLevel },
+              { label: "I'm nearly fluent",              emoji: "⭐", level: "C2" as CEFRLevel },
             ].map(opt => {
               const sel = cefr === opt.level;
               const d = CEFR_DATA[opt.level];
@@ -609,10 +595,7 @@ function StepSkill({
                   <span style={{ fontSize: 13, color: sel ? d.color : "var(--text-secondary)", fontWeight: sel ? 700 : 400, flex: 1 }}>
                     {opt.label}
                   </span>
-                  <div style={{
-                    background: sel ? d.color : "var(--bg-tertiary)",
-                    borderRadius: 5, padding: "2px 8px",
-                  }}>
+                  <div style={{ background: sel ? d.color : "var(--bg-tertiary)", borderRadius: 5, padding: "2px 8px" }}>
                     <span style={{ fontSize: 11, fontWeight: 700, color: sel ? "#fff" : "var(--text-hint)" }}>
                       {opt.level}
                     </span>
@@ -636,8 +619,9 @@ function StepSkill({
    STEP 5 — Confirmation
 ───────────────────────────────────────── */
 function StepConfirm({
-  native, learn, cefr, duoScore, onBack,
+  userName, userEmail, native, learn, cefr, duoScore, onBack,
 }: {
+  userName: string; userEmail: string;
   native: string; learn: string; cefr: CEFRLevel; duoScore: number; onBack: () => void;
 }) {
   const router = useRouter();
@@ -645,6 +629,7 @@ function StepConfirm({
   const band = scoreBand(duoScore);
   const nFlag = ALL_LANGS.find(l => l.name === native)?.flag ?? "🏳️";
   const lFlag = ALL_LANGS.find(l => l.name === learn)?.flag ?? "🏳️";
+  const initial = userName.charAt(0).toUpperCase() || "?";
 
   return (
     <div style={{ animation: "fadeIn 0.25s ease" }}>
@@ -654,11 +639,11 @@ function StepConfirm({
         Here's your profile — we'll use this to match your calls
       </p>
 
-      {/* Avatar + name */}
       <div style={{
         background: "var(--bg-secondary)", borderRadius: 12, overflow: "hidden",
         marginBottom: 14, border: "0.5px solid var(--border-subtle)",
       }}>
+        {/* Avatar + name */}
         <div style={{
           padding: "16px 18px", borderBottom: "0.5px solid var(--border-subtle)",
           display: "flex", alignItems: "center", gap: 12,
@@ -668,10 +653,10 @@ function StepConfirm({
             background: "var(--accent-green-bg)", border: "2px solid var(--accent-green)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 18, fontWeight: 800, color: "var(--accent-green)", flexShrink: 0,
-          }}>Y</div>
+          }}>{initial}</div>
           <div>
-            <p style={{ fontSize: 14, fontWeight: 700 }}>Yusuf Klein</p>
-            <p style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 1 }}>yusuf@example.com</p>
+            <p style={{ fontSize: 14, fontWeight: 700 }}>{userName}</p>
+            <p style={{ fontSize: 11, color: "var(--text-faint)", marginTop: 1 }}>{userEmail}</p>
           </div>
           <button onClick={onBack} style={{
             marginLeft: "auto", fontSize: 11, color: "var(--accent-blue)",
@@ -751,8 +736,8 @@ function StepConfirm({
         <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent-blue)", flexShrink: 0, marginTop: 3 }} />
         <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
           We'll match you with{" "}
-          <span style={{ color: "var(--accent-blue)", fontWeight: 700 }}>native {learn} speakers</span>
-          {" "}who are learning {native} at a similar{" "}
+          <span style={{ color: "var(--accent-blue)", fontWeight: 700 }}>{learn} learners</span>
+          {" "}who speak {native} natively — you'll practise {learn} together at{" "}
           <span style={{ color: cd.color, fontWeight: 700 }}>{cefr} level</span>.
         </p>
       </div>
@@ -776,8 +761,19 @@ export default function OnboardingPage() {
   const [learn, setLearn]         = useState("");
   const [cefr, setCefr]           = useState<CEFRLevel>("B1");
   const [duoScore, setDuoScore]   = useState(0);
+  const [userName, setUserName]   = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   const TOTAL = 5;
+
+  useEffect(() => {
+    const name  = sessionStorage.getItem("ll_user_name")  || "";
+    const email = sessionStorage.getItem("ll_user_email") || "";
+    setUserName(name);
+    setUserEmail(email);
+    // Coming from signup — skip step 1 (already collected name + email)
+    if (name) setStep(2);
+  }, []);
 
   return (
     <div style={{
@@ -808,7 +804,7 @@ export default function OnboardingPage() {
           borderRadius: "0 0 14px 14px",
           padding: "24px 22px",
         }}>
-          {step === 1 && <StepAccount onNext={() => setStep(2)} />}
+          {step === 1 && <StepAccount userName={userName} userEmail={userEmail} onNext={() => setStep(2)} />}
           {step === 2 && (
             <StepNative
               native={native} setNative={setNative}
@@ -831,6 +827,7 @@ export default function OnboardingPage() {
           )}
           {step === 5 && (
             <StepConfirm
+              userName={userName} userEmail={userEmail}
               native={native} learn={learn} cefr={cefr} duoScore={duoScore}
               onBack={() => setStep(4)}
             />
