@@ -64,9 +64,22 @@ function CallScreen() {
       })
         .then(res => res.json())
         .then(data => {
-          if (data.status === "full") setCallRole("full");
-          else if (data.role === "first") setCallRole("first");
-          else if (data.role === "second") setCallRole("second");
+          if (data.status === "full") {
+            setCallRole("full");
+          } else {
+            const role = data.role as "first" | "second";
+            setCallRole(role);
+            
+            // Start recording their own stream on the server
+            // Note: In a real app we might want to record BOTH streams or composite them. 
+            // For now, we ask the server to open their push stream id and record it.
+            const streamIdToRecord = role === "first" ? `${callId}_1` : `${callId}_2`;
+            fetch(`/api/call/${callId}/record`, {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify({ action: "start", streamId: streamIdToRecord })
+            }).catch(e => console.error("Failed to start recording:", e));
+          }
         });
     }
   }, [searchParams, pathname, router]);
@@ -268,7 +281,7 @@ function CallScreen() {
           color: "var(--text-muted)", borderRadius: 8, padding: "9px 20px",
           fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 500,
         }}>Report</button>
-        <Link href="/dashboard" style={{
+        <button style={{
           background: "var(--accent-red)", border: "none",
           color: "#fff", borderRadius: 8, padding: "10px 32px",
           fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
@@ -276,7 +289,22 @@ function CallScreen() {
         }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-        >End call</Link>
+          onClick={() => {
+            const currentCallId = searchParams.get("id");
+            if (currentCallId) {
+               const streamIdToStop = callRole === "first" ? `${currentCallId}_1` : `${currentCallId}_2`;
+               fetch(`/api/call/${currentCallId}/record`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "stop", streamId: streamIdToStop })
+               }).finally(() => {
+                  router.push("/dashboard");
+               });
+            } else {
+               router.push("/dashboard");
+            }
+          }}
+        >End call</button>
         <button style={{
           background: "var(--accent-blue)", border: "none",
           color: "#fff", borderRadius: 8, padding: "10px 26px",
