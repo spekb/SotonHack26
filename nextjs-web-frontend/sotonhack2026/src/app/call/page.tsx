@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { leaveQueue } from "@/lib/actions/matchmakingActions";
 
 const PROMPTS = [
   "Describe your morning routine using past tense verbs.",
@@ -70,6 +71,12 @@ function CallScreen() {
         });
     }
   }, [searchParams, pathname, router]);
+
+  const handleSkip = async () => {
+    const userId = sessionStorage.getItem("ll_user_name") ?? "anon";
+    await leaveQueue(userId);
+    router.push("/waiting");
+  };
 
   if (callRole === "full") {
     return (
@@ -162,22 +169,6 @@ function CallScreen() {
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none", zIndex: 0 }}
             allow="camera; microphone; display-capture; autoplay"
           />
-
-          {/* Controls */}
-          {/* <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 6, zIndex: 1 }}>
-            {[
-              { label: micOn ? "🎤" : "🔇", active: micOn, toggle: () => setMicOn((v) => !v) },
-              { label: camOn ? "📷" : "🚫", active: camOn, toggle: () => setCamOn((v) => !v) },
-            ].map((b, i) => (
-              <button key={i} onClick={b.toggle} style={{
-                width: 32, height: 32, borderRadius: "50%",
-                background: b.active ? "rgba(44,44,46,0.85)" : "rgba(255,55,95,0.3)",
-                border: `0.5px solid ${b.active ? "var(--border-subtle)" : "var(--accent-red)"}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 13, transition: "all 0.15s",
-              }}>{b.label}</button>
-            ))}
-          </div> */}
         </div>
       </div>
 
@@ -277,12 +268,14 @@ function CallScreen() {
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >End call</Link>
-        <button style={{
-          background: "var(--accent-blue)", border: "none",
-          color: "#fff", borderRadius: 8, padding: "10px 26px",
-          fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
-          letterSpacing: "0.01em", transition: "opacity 0.15s",
-        }}
+        <button
+          onClick={handleSkip}
+          style={{
+            background: "var(--accent-blue)", border: "none",
+            color: "#fff", borderRadius: 8, padding: "10px 26px",
+            fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+            letterSpacing: "0.01em", transition: "opacity 0.15s",
+          }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >Skip / Next →</button>
