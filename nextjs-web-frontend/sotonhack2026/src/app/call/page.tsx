@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 const PROMPTS = [
   "Describe your morning routine using past tense verbs.",
@@ -11,7 +12,21 @@ const PROMPTS = [
   "Talk about the last film you watched.",
 ];
 
-export default function CallPage() {
+function CallScreen() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const callId = searchParams.get("id");
+    if (!callId) {
+      const newId = Math.random().toString(36).substring(2, 8);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("id", newId);
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  }, [searchParams, pathname, router]);
+
   const [activePrompt, setActivePrompt] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [micOn, setMicOn] = useState(true);
@@ -235,5 +250,17 @@ export default function CallPage() {
         >Skip / Next →</button>
       </div>
     </div>
+  );
+}
+
+export default function CallPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", background: "var(--bg-quaternary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
+        Loading call...
+      </div>
+    }>
+      <CallScreen />
+    </Suspense>
   );
 }
