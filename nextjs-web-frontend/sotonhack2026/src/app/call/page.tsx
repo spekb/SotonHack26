@@ -16,17 +16,10 @@ function CallScreen() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const callId = searchParams.get("id");
-    if (!callId) {
-      const newId = Math.random().toString(36).substring(2, 8);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("id", newId);
-      router.replace(`${pathname}?${params.toString()}`);
-    }
-  }, [searchParams, pathname, router]);
-
+  const callId = searchParams.get("id") || "";
+  const idFirst = `${callId}_1`;
+  const idSecond = `${callId}_2`;
+  const [callRole, setCallRole] = useState<"loading" | "first" | "second" | "full">("loading");
   const [activePrompt, setActivePrompt] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [micOn, setMicOn] = useState(true);
@@ -36,6 +29,57 @@ function CallScreen() {
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    const callId = searchParams.get("id");
+    if (!callId) {
+      const newId = Math.random().toString(36).substring(2, 8);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("id", newId);
+      router.replace(`${pathname}?${params.toString()}`);
+    } else {
+      let userId = sessionStorage.getItem("call_user_id");
+      if (!userId) {
+        userId = Math.random().toString(36).substring(2, 10);
+        sessionStorage.setItem("call_user_id", userId);
+      }
+      fetch(`/api/call/${callId}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "full") setCallRole("full");
+          else if (data.role === "first") setCallRole("first");
+          else if (data.role === "second") setCallRole("second");
+        });
+    }
+  }, [searchParams, pathname, router]);
+
+  if (callRole === "full") {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--bg-quaternary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", flexDirection: "column", gap: 20 }}>
+        <h2 style={{ color: "var(--accent-red)" }}>Call is Full</h2>
+        <p>This room already has 2 participants. You cannot join as the third user.</p>
+        <Link href="/dashboard" style={{
+          background: "var(--accent-blue)", border: "none",
+          color: "#fff", borderRadius: 8, padding: "9px 24px",
+          fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+          textDecoration: "none", letterSpacing: "0.01em",
+        }}>Go Back Directory</Link>
+      </div>
+    );
+  }
+
+  if (callRole === "loading") {
+    return (
+      <div style={{ minHeight: "100vh", background: "var(--bg-quaternary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
+        Connecting to call...
+      </div>
+    );
+  }
+
 
   const fmt = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
@@ -58,10 +102,16 @@ function CallScreen() {
           <span style={{ fontSize: 11, color: "var(--text-faint)" }}>·</span>
           <span style={{ fontSize: 11, color: "var(--text-faint)", fontFamily: "var(--font-mono, monospace)" }}>{fmt(elapsed)}</span>
         </div>
-        <div style={{
-          fontSize: 10, color: "var(--text-muted)", background: "var(--bg-tertiary)",
-          borderRadius: 6, padding: "3px 10px", fontWeight: 500,
-        }}>PT → DE</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div style={{
+            fontSize: 10, color: "var(--accent-blue)", background: "rgba(10,132,255,0.15)",
+            borderRadius: 6, padding: "3px 10px", fontWeight: 600, border: "0.5px solid rgba(10,132,255,0.3)"
+          }}>{callRole === "first" ? "1st User (Host)" : "2nd User"}</div>
+          <div style={{
+            fontSize: 10, color: "var(--text-muted)", background: "var(--bg-tertiary)",
+            borderRadius: 6, padding: "3px 10px", fontWeight: 500,
+          }}>PT → DE</div>
+        </div>
       </div>
 
       {/* Video feeds */}
@@ -72,21 +122,17 @@ function CallScreen() {
           position: "relative", background: "#0e0e14",
           borderRight: "0.5px solid var(--border-subtle)",
           minHeight: 320, display: "flex", alignItems: "center", justifyContent: "center",
+          overflow: "hidden",
         }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: "50%",
-              background: "var(--accent-blue-bg)", border: "2px solid var(--accent-blue)",
-              margin: "0 auto 12px", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 26, fontWeight: 700, color: "var(--accent-blue)",
-            }}>M</div>
-            <p style={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 500 }}>Maria</p>
-            <p style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 3 }}>São Paulo, Brazil</p>
-          </div>
+          <iframe 
+            src={`https://vdo.ninja/?view=${callRole === "first" ? idSecond : idFirst}`}
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none", zIndex: 0 }}
+            allow="camera; microphone; display-capture; autoplay"
+          />
 
           {/* Native badge */}
           <div style={{
-            position: "absolute", top: 12, left: 12,
+            position: "absolute", top: 12, left: 12, zIndex: 1, pointerEvents: "none",
             fontSize: 9, color: "var(--accent-blue)",
             background: "rgba(10,132,255,0.15)", border: "0.5px solid rgba(10,132,255,0.3)",
             borderRadius: 5, padding: "3px 8px", fontWeight: 600,
@@ -94,7 +140,7 @@ function CallScreen() {
 
           {/* Transcription */}
           <div style={{
-            position: "absolute", bottom: 0, left: 0, right: 0,
+            position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 1, pointerEvents: "none",
             background: "rgba(0,0,0,0.65)", padding: "8px 14px",
             borderTop: "0.5px solid var(--border-subtle)",
           }}>
@@ -109,19 +155,16 @@ function CallScreen() {
         <div style={{
           position: "relative", background: "#111113",
           minHeight: 320, display: "flex", alignItems: "center", justifyContent: "center",
+          overflow: "hidden",
         }}>
-          <div style={{ textAlign: "center" }}>
-            <div style={{
-              width: 72, height: 72, borderRadius: "50%",
-              background: "var(--accent-green-bg)", border: "2px solid var(--accent-green)",
-              margin: "0 auto 12px", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 26, fontWeight: 700, color: "var(--accent-green)",
-            }}>Y</div>
-            <p style={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 500 }}>You</p>
-          </div>
+          <iframe 
+            src={`https://vdo.ninja/?push=${callRole === "first" ? idFirst : idSecond}`}
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none", zIndex: 0 }}
+            allow="camera; microphone; display-capture; autoplay"
+          />
 
           {/* Controls */}
-          <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 6 }}>
+          <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 6, zIndex: 1 }}>
             {[
               { label: micOn ? "🎤" : "🔇", active: micOn, toggle: () => setMicOn((v) => !v) },
               { label: camOn ? "📷" : "🚫", active: camOn, toggle: () => setCamOn((v) => !v) },
@@ -147,10 +190,10 @@ function CallScreen() {
         {/* Maria stats */}
         <div style={{ display: "flex", gap: 20, padding: "9px 18px", borderRight: "0.5px solid var(--border-subtle)", alignItems: "center" }}>
           {[
-            { label: "LEVEL",   value: "A2",   color: "var(--accent-blue)" },
-            { label: "SESSIONS",value: "38",   color: "var(--text-secondary)" },
-            { label: "RATING",  value: "4.8",  color: "var(--accent-orange)" },
-            { label: "MATCH",   value: "94%",  color: "var(--accent-purple)" },
+            { label: "LEVEL", value: "A2", color: "var(--accent-blue)" },
+            { label: "SESSIONS", value: "38", color: "var(--text-secondary)" },
+            { label: "RATING", value: "4.8", color: "var(--accent-orange)" },
+            { label: "MATCH", value: "94%", color: "var(--accent-purple)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 8, color: "var(--text-faint)", fontWeight: 600, marginBottom: 1 }}>{s.label}</p>
@@ -161,10 +204,10 @@ function CallScreen() {
         {/* Your stats */}
         <div style={{ display: "flex", gap: 20, padding: "9px 18px", alignItems: "center" }}>
           {[
-            { label: "LEVEL",     value: "B2",   color: "var(--accent-green)" },
-            { label: "SESSIONS",  value: "142",  color: "var(--text-secondary)" },
-            { label: "VOCAB",     value: "2,340",color: "var(--text-secondary)" },
-            { label: "USED TODAY",value: "47",   color: "var(--accent-orange)" },
+            { label: "LEVEL", value: "B2", color: "var(--accent-green)" },
+            { label: "SESSIONS", value: "142", color: "var(--text-secondary)" },
+            { label: "VOCAB", value: "2,340", color: "var(--text-secondary)" },
+            { label: "USED TODAY", value: "47", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 8, color: "var(--text-faint)", fontWeight: 600, marginBottom: 1 }}>{s.label}</p>
