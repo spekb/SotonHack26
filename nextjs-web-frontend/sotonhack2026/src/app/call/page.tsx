@@ -23,28 +23,11 @@ function CallScreen() {
   const idSecond = `${callId}_2`;
   const [callRole, setCallRole] = useState<"loading" | "first" | "second" | "full">("loading");
 
-  useEffect(() => {
-    const callId = searchParams.get("id");
-    if (!callId) {
-      const newId = Math.random().toString(36).substring(2, 8);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("id", newId);
-      router.replace(`${pathname}?${params.toString()}`);
-    }
-  }, [searchParams, pathname, router]);
-
   const [activePrompt, setActivePrompt] = useState(0);
   const [elapsed, setElapsed] = useState(0);
-  const [micOn, setMicOn] = useState(true);
-  const [camOn, setCamOn] = useState(true);
   const [userInitial, setUserInitial] = useState("?");
 
-  useEffect(() => {
-    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
-    setUserInitial(sessionStorage.getItem("ll_user_name")?.[0]?.toUpperCase() ?? "?");
-    return () => clearInterval(t);
-  }, []);
-
+  // ── Assign call role ────────────────────────────────────────────────────────
   useEffect(() => {
     const callId = searchParams.get("id");
     if (!callId) {
@@ -61,7 +44,7 @@ function CallScreen() {
       fetch(`/api/call/${callId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({ userId }),
       })
         .then(res => res.json())
         .then(data => {
@@ -72,15 +55,77 @@ function CallScreen() {
     }
   }, [searchParams, pathname, router]);
 
+  // ── Elapsed timer + user initial ────────────────────────────────────────────
+  useEffect(() => {
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    setUserInitial(sessionStorage.getItem("ll_user_name")?.[0]?.toUpperCase() ?? "?");
+    return () => clearInterval(t);
+  }, []);
+
+  // ── Poll for partner leaving ────────────────────────────────────────────────
+  // Every 3 seconds, check how many participants are in the room.
+  // If it drops to 1 (partner left), send this user back to /waiting.
+  useEffect(() => {
+    if (callRole === "loading" || callRole === "full") return;
+
+    const id = searchParams.get("id");
+    if (!id) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/call/${id}/status`);
+        const data = await res.json();
+        if (data.participants < 2) {
+          clearInterval(interval);
+          const userId = sessionStorage.getItem("ll_user_name") ?? "anon";
+          await leaveQueue(userId);
+          router.push("/waiting");
+        }
+      } catch {
+        // If the status check fails, don't boot the user — just try again next poll
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [callRole, searchParams, router]);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+  const handleEndCall = async () => {
+    const userId = sessionStorage.getItem("call_user_id") ?? "anon";
+    const matchUserId = sessionStorage.getItem("ll_user_name") ?? "anon";
+    if (callId) {
+      await fetch(`/api/call/${callId}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+    }
+    await leaveQueue(matchUserId);
+    router.push("/dashboard");
+  };
+
   const handleSkip = async () => {
-    const userId = sessionStorage.getItem("ll_user_name") ?? "anon";
-    await leaveQueue(userId);
+    const userId = sessionStorage.getItem("call_user_id") ?? "anon";
+    const matchUserId = sessionStorage.getItem("ll_user_name") ?? "anon";
+    if (callId) {
+      await fetch(`/api/call/${callId}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+    }
+    await leaveQueue(matchUserId);
     router.push("/waiting");
   };
 
+  // ── Early returns ───────────────────────────────────────────────────────────
   if (callRole === "full") {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg-quaternary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)", flexDirection: "column", gap: 20 }}>
+      <div style={{
+        minHeight: "100vh", background: "var(--bg-quaternary)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: "var(--text-secondary)", flexDirection: "column", gap: 20,
+      }}>
         <h2 style={{ color: "var(--accent-red)" }}>Call is Full</h2>
         <p>This room already has 2 participants. You cannot join as the third user.</p>
         <Link href="/dashboard" style={{
@@ -88,14 +133,18 @@ function CallScreen() {
           color: "#fff", borderRadius: 8, padding: "9px 24px",
           fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
           textDecoration: "none", letterSpacing: "0.01em",
-        }}>Go Back Directory</Link>
+        }}>Go Back to Dashboard</Link>
       </div>
     );
   }
 
   if (callRole === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg-quaternary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-secondary)" }}>
+      <div style={{
+        minHeight: "100vh", background: "var(--bg-quaternary)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        color: "var(--text-secondary)",
+      }}>
         Connecting to call...
       </div>
     );
@@ -125,7 +174,7 @@ function CallScreen() {
       <div style={{ display: "flex", gap: 8 }}>
         <div style={{
           fontSize: 10, color: "var(--accent-blue)", background: "rgba(10,132,255,0.15)",
-          borderRadius: 6, padding: "3px 10px", fontWeight: 600, border: "0.5px solid rgba(10,132,255,0.3)"
+          borderRadius: 6, padding: "3px 10px", fontWeight: 600, border: "0.5px solid rgba(10,132,255,0.3)",
         }}>{callRole === "first" ? "1st User (Host)" : "2nd User"}</div>
       </div>
 
@@ -144,7 +193,6 @@ function CallScreen() {
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none", zIndex: 0 }}
             allow="camera; microphone; display-capture; autoplay"
           />
-
           {/* Transcription */}
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 1, pointerEvents: "none",
@@ -180,10 +228,10 @@ function CallScreen() {
       }}>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", borderRight: "0.5px solid var(--border-subtle)", alignItems: "center" }}>
           {[
-            { label: "LEVEL", value: "A2", color: "var(--accent-blue)" },
-            { label: "SESSIONS", value: "38", color: "var(--text-secondary)" },
-            { label: "RATING", value: "4.8", color: "var(--accent-orange)" },
-            { label: "MATCH", value: "94%", color: "var(--accent-purple)" },
+            { label: "LEVEL",    value: "A2",  color: "var(--accent-blue)" },
+            { label: "SESSIONS", value: "38",  color: "var(--text-secondary)" },
+            { label: "RATING",   value: "4.8", color: "var(--accent-orange)" },
+            { label: "MATCH",    value: "94%", color: "var(--accent-purple)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
@@ -193,10 +241,10 @@ function CallScreen() {
         </div>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL", value: "B2", color: "var(--accent-green)" },
-            { label: "SESSIONS", value: "142", color: "var(--text-secondary)" },
-            { label: "VOCAB", value: "2,340", color: "var(--text-secondary)" },
-            { label: "USED TODAY", value: "47", color: "var(--accent-orange)" },
+            { label: "LEVEL",      value: "B2",    color: "var(--accent-green)" },
+            { label: "SESSIONS",   value: "142",   color: "var(--text-secondary)" },
+            { label: "VOCAB",      value: "2,340", color: "var(--text-secondary)" },
+            { label: "USED TODAY", value: "47",    color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
@@ -259,15 +307,19 @@ function CallScreen() {
           color: "var(--text-muted)", borderRadius: 8, padding: "9px 20px",
           fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 500,
         }}>Report</button>
-        <Link href="/dashboard" style={{
-          background: "var(--accent-red)", border: "none",
-          color: "#fff", borderRadius: 8, padding: "10px 32px",
-          fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
-          textDecoration: "none", letterSpacing: "0.01em", transition: "opacity 0.15s",
-        }}
+
+        <button
+          onClick={handleEndCall}
+          style={{
+            background: "var(--accent-red)", border: "none",
+            color: "#fff", borderRadius: 8, padding: "10px 32px",
+            fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+            letterSpacing: "0.01em", transition: "opacity 0.15s",
+          }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-        >End call</Link>
+        >End call</button>
+
         <button
           onClick={handleSkip}
           style={{
