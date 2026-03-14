@@ -1,15 +1,18 @@
 "use client";
+// import DashboardShell from "./DashboardShell";
+import { fetchDashboardStats, DashboardStats } from "./dashboardService";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const TOPICS = [
-  { label: "Daily life",    pct: 82, color: "var(--accent-blue)" },
-  { label: "Travel",        pct: 67, color: "var(--accent-green)" },
-  { label: "Food & culture",pct: 54, color: "var(--accent-orange)" },
-  { label: "Work & career", pct: 40, color: "var(--accent-purple)" },
-  { label: "Grammar",       pct: 28, color: "var(--accent-red)" },
-];
+// const TOPICS = [
+//   { label: "Daily life",    pct: 82, color: "var(--accent-blue)" },
+//   { label: "Travel",        pct: 67, color: "var(--accent-green)" },
+//   { label: "Food & culture",pct: 54, color: "var(--accent-orange)" },
+//   { label: "Work & career", pct: 40, color: "var(--accent-purple)" },
+//   { label: "Grammar",       pct: 28, color: "var(--accent-red)" },
+// ];
 
 const WEEKS = [32, 52, 47, 68, 60, 65, 80, 90];
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
@@ -26,6 +29,8 @@ function generateHeatmap() {
 }
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const router = useRouter();
   const [heatmap, setHeatmap] = useState<string[][]>([]);
   const [userInitial, setUserInitial] = useState("?");
@@ -34,6 +39,22 @@ export default function Dashboard() {
     setHeatmap(generateHeatmap());
     const storedName = sessionStorage.getItem("ll_user_name") || "";
     setUserInitial(storedName.charAt(0).toUpperCase() || "?");
+
+    // Fetch stats once on mount
+    const user = {
+      id: "1",
+      name: "Test User",
+      total_time: 18540,
+      conversations: [], // replace with real user data later
+      vocab: [],
+    };
+
+    fetchDashboardStats(user)
+      .then(data => {
+        setStats(data.stats);
+        setStatsLoading(false);
+      })
+      .catch(() => setStatsLoading(false));
   }, []);
 
   const handleLogout = () => {
@@ -110,7 +131,7 @@ export default function Dashboard() {
           </div>
 
           {/* Stat cards */}
-          <div className="dash-grid-4" style={{ marginBottom: 14 }}>
+          {/* <div className="dash-grid-4" style={{ marginBottom: 14 }}>
             {[
               { label: "SESSIONS",      value: "142",   sub: "+8 this week",       subColor: "var(--accent-green)" },
               { label: "WORDS LEARNED", value: "2,340", sub: "+120 this week",     subColor: "var(--accent-blue)" },
@@ -126,7 +147,47 @@ export default function Dashboard() {
                 <p style={{ fontSize: 12, color: s.subColor }}>{s.sub}</p>
               </div>
             ))}
-          </div>
+          </div> */}
+
+          {/* <DashboardShell /> */}
+
+          {statsLoading ? (
+            <div className="dash-grid-4" style={{ marginBottom: 14 }}>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} style={{
+                  background: "var(--bg-secondary)", borderRadius: 12,
+                  padding: "16px 18px", border: "0.5px solid var(--border-subtle)",
+                  display: "flex", flexDirection: "column", gap: 8,
+                }}>
+                  <div style={{ height: 10, width: "50%", background: "var(--bg-tertiary)", borderRadius: 4 }} />
+                  <div style={{ height: 26, width: "70%", background: "var(--bg-tertiary)", borderRadius: 4 }} />
+                  <div style={{ height: 10, width: "60%", background: "var(--bg-tertiary)", borderRadius: 4 }} />
+                </div>
+              ))}
+            </div>
+          ) : stats ? (
+            <div className="dash-grid-4" style={{ marginBottom: 14 }}>
+              {[
+                { label: "SESSIONS",      value: stats.total_interactions.toString(),        sub: `+${stats.new_words_this_week.length} new words this week`, subColor: "var(--accent-green)" },
+                { label: "WORDS LEARNED", value: stats.most_used_words.length.toString(),    sub: `avg ${stats.avg_words_per_session.toFixed(1)} per session`,  subColor: "var(--accent-blue)" },
+                { label: "TOTAL TIME",    value: `${Math.round(stats.total_convo_time_seconds / 60)}m`, sub: `${stats.avg_words_per_turn.toFixed(1)} words/turn avg`,    subColor: "var(--accent-orange)" },
+                { label: "NEW THIS WEEK", value: stats.new_words_this_week.length.toString(), sub: `${stats.new_words_per_minute.toFixed(1)} new words/min`,      subColor: "var(--accent-purple)" },
+              ].map((s) => (
+                <div key={s.label} style={{
+                  background: "var(--bg-secondary)", borderRadius: 12,
+                  padding: "16px 18px", border: "0.5px solid var(--border-subtle)",
+                }}>
+                  <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.05em", marginBottom: 6 }}>{s.label}</p>
+                  <p style={{ fontSize: 26, fontWeight: 700, lineHeight: 1, marginBottom: 5 }}>{s.value}</p>
+                  <p style={{ fontSize: 12, color: s.subColor }}>{s.sub}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ color: "var(--text-muted)", fontSize: 13, padding: "20px 0" }}>
+              No conversations yet — start a call to see your stats!
+            </div>
+          )}
 
           {/* Heatmap */}
           <div style={{
@@ -160,7 +221,7 @@ export default function Dashboard() {
           {/* Bottom row */}
           <div className="dash-grid-2">
 
-            <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
+            {/* <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
               <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 14 }}>POPULAR TOPICS</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
                 {TOPICS.map((t) => (
@@ -173,7 +234,7 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
               <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 14 }}>AVG SESSION LENGTH · WEEKS (MIN)</p>

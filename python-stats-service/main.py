@@ -23,8 +23,10 @@ async def get_conversation_prompt(target_language: str, native_language: str, di
 # Process a completed conversation and get stats
 @app.post("/api/process-conversation")
 async def process_conversation(user: User):
-    conversation = user.conversations[-1]  # latest conversation is the last one
+    if not user.conversations:
+        return {"stats": None, "error": "No conversations yet"}
 
+    conversation = user.conversations[-1]
     stats = calculate_stats(user)
 
     await db.users.update_one(
@@ -37,6 +39,4 @@ async def process_conversation(user: User):
         upsert=True
     )
 
-    return {
-        "stats": stats,
-    }
+    return {"stats": stats}
