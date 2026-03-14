@@ -3,25 +3,31 @@
 import mongoose from 'mongoose';
 import { connectDB } from '../mongoose'; // Ensure mongoose is connected
 
+export type Participant = {
+    name: string;
+    id: string;
+};
+
 export type Conversation = {
     id: string;
-    vocab : string[];
+    vocab: string[];
     new_vocab: string[][];
-    participants: {name: string, id: string}[];
+    participants: Participant[];
     topics: string[];
-    dateStamp : Date;
+    datestamp: Date;    // changed from dateStamp to datestamp
     length: number;
 };
 
 export type User = {
-    name: string;
     id: string;
+    name: string;
     total_time: number;
     conversations: Conversation[];
     vocab: string[];
     native_lang: string;
     learning_langs: string[];
     skill_level: number;
+    cefr_level: string;  // NEW
 };
 
 // Define Mongoose Schema & Models
@@ -31,7 +37,7 @@ const ConversationSchema = new mongoose.Schema({
     new_vocab: [[String]],
     participants: [{ name: String, id: String }],
     topics: [String],
-    dateStamp: Date,
+    datestamp: Date,   // changed from dateStamp
     length: Number
 });
 
@@ -44,9 +50,9 @@ const UserSchema = new mongoose.Schema({
     native_lang: String,
     learning_langs: [String],
     skill_level: Number,
+    cefr_level: { type: String, default: "A1" },  // NEW
 });
 
-// Avoid OverwriteModelError
 const ConversationModel = mongoose.models.Conversation || mongoose.model('Conversation', ConversationSchema);
 const UserModel = mongoose.models.User || mongoose.model('User', UserSchema);
 
@@ -66,13 +72,14 @@ export async function getUserById(id: string): Promise<User | null> {
                 new_vocab: conv.new_vocab,
                 participants: conv.participants,
                 topics: conv.topics,
-                dateStamp: conv.dateStamp,
+                datestamp: conv.datestamp,   // changed
                 length: conv.length
             })),
             vocab: user.vocab as string[],
             native_lang: user.native_lang,
             learning_langs: user.learning_langs as string[],
-            skill_level: user.skill_level as number
+            skill_level: user.skill_level as number,
+            cefr_level: user.cefr_level as string ?? "A1",  // NEW
         };
     } catch (error) {
         console.error("Error fetching user by ID:", error);
@@ -96,13 +103,14 @@ export async function getUserByName(name: string): Promise<User | null> {
                 new_vocab: conv.new_vocab,
                 participants: conv.participants,
                 topics: conv.topics,
-                dateStamp: conv.dateStamp,
+                datestamp: conv.datestamp,   // changed
                 length: conv.length
             })),
             vocab: user.vocab as string[],
             native_lang: user.native_lang,
             learning_langs: user.learning_langs as string[],
-            skill_level: user.skill_level as number
+            skill_level: user.skill_level as number,
+            cefr_level: user.cefr_level as string ?? "A1",  // NEW
         };
     } catch (error) {
         console.error("Error fetching user by name:", error);
@@ -125,7 +133,7 @@ export async function getConversationById(id: string): Promise<Conversation | nu
                 id: p.id
             })),
             topics: conversation.topics as string[],
-            dateStamp: conversation.dateStamp as Date,
+            datestamp: conversation.datestamp as Date,   // changed
             length: conversation.length as number
         };
     } catch (error) {
@@ -134,7 +142,7 @@ export async function getConversationById(id: string): Promise<Conversation | nu
     }
 }
 
-export async function insertUserByDetails(name: string, native_lang: string, learning_langs: string[], skill_level: number): Promise<User | null> {
+export async function insertUserByDetails(name: string, native_lang: string, learning_langs: string[], skill_level: number, cefr_level: string = "A1"): Promise<User | null> {
     try {
         await connectDB();
         const id = new mongoose.Types.ObjectId().toString();
@@ -144,9 +152,10 @@ export async function insertUserByDetails(name: string, native_lang: string, lea
             total_time: 0,
             conversations: [],
             vocab: [],
-            native_lang: native_lang,
-            learning_langs: learning_langs,
-            skill_level: skill_level
+            native_lang,
+            learning_langs,
+            skill_level,
+            cefr_level,  // NEW
         });
         
         await newUser.save();
@@ -159,7 +168,8 @@ export async function insertUserByDetails(name: string, native_lang: string, lea
             vocab: [],
             native_lang: newUser.native_lang,
             learning_langs: newUser.learning_langs as string[],
-            skill_level: newUser.skill_level as number
+            skill_level: newUser.skill_level as number,
+            cefr_level: newUser.cefr_level as string,  // NEW
         };
     } catch (error) {
         console.error("Error inserting user:", error);
@@ -177,7 +187,7 @@ export async function insertConversation(data: Omit<Conversation, 'id'>): Promis
             new_vocab: data.new_vocab,
             participants: data.participants,
             topics: data.topics,
-            dateStamp: data.dateStamp,
+            datestamp: data.datestamp,   // changed
             length: data.length
         });
         
@@ -192,11 +202,10 @@ export async function insertConversation(data: Omit<Conversation, 'id'>): Promis
                 id: p.id
             })),
             topics: newConversation.topics as string[],
-            dateStamp: newConversation.dateStamp as Date,
+            datestamp: newConversation.datestamp as Date,   // changed
             length: newConversation.length as number
         };
 
-        // Add the conversation to the conversations array of each participant
         const participantIds = data.participants.map(p => p.id);
         if (participantIds.length > 0) {
             await UserModel.updateMany(

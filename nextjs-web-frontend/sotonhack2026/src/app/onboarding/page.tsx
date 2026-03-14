@@ -450,7 +450,7 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
       sessionStorage.setItem("ll_duo_score", duoScore.toString());
 
       //console.log([userName, native, [learn], skillIndex]);
-      await insertUserByDetails(userName, native, [learn], skillIndex);
+      await insertUserByDetails(userName, native, [learn], skillIndex, cefr);
       router.push("/dashboard");
     } catch (e) {
       console.error(e);

@@ -35,10 +35,15 @@ export default function LoginPage() {
     } else {
       if (!email.trim()) return setError("Please enter your email.");
       const displayName = email.trim().split("@")[0];
-      if (await getUserByName(email) == null) {
+      const user = await getUserByName(email);
+      if (user == null) {
         return setError("User account does not exist.");
       } else {
         sessionStorage.setItem("ll_user_name", displayName);
+        sessionStorage.setItem("ll_native_lang", user.native_lang ?? "English");
+        sessionStorage.setItem("ll_learning_lang", user.learning_langs?.[0] ?? "");
+        sessionStorage.setItem("ll_duo_score", user.skill_level?.toString() ?? "0");
+        sessionStorage.setItem("ll_cefr", user.cefr_level ?? "A1");
         router.push("/dashboard");
       }
     }
