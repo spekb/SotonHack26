@@ -6,13 +6,13 @@ import Link from "next/link";
 const INPUT = {
   width: "100%", background: "var(--bg-tertiary)",
   border: "0.5px solid var(--border-subtle)", borderRadius: 8,
-  padding: "10px 12px", fontSize: 13, color: "var(--text-primary)",
+  padding: "11px 14px", fontSize: 14, color: "var(--text-primary)",
   outline: "none", fontFamily: "inherit",
 } as const;
 
 const LABEL = {
-  fontSize: 10, color: "var(--text-faint)", fontWeight: 600,
-  letterSpacing: "0.05em", marginBottom: 5, display: "block",
+  fontSize: 11, color: "var(--text-faint)", fontWeight: 600,
+  letterSpacing: "0.05em", marginBottom: 6, display: "block",
 } as const;
 
 export default function LoginPage() {
@@ -28,7 +28,6 @@ export default function LoginPage() {
     if (mode === "signup") {
       if (!name.trim()) return setError("Please enter your name.");
       if (!email.trim()) return setError("Please enter your email.");
-      // Save for onboarding to pick up
       sessionStorage.setItem("ll_user_name", name.trim());
       sessionStorage.setItem("ll_user_email", email.trim());
       router.push("/onboarding");
@@ -45,33 +44,33 @@ export default function LoginPage() {
       minHeight: "100vh", background: "var(--bg-primary)",
       display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
     }}>
-      <div style={{ width: "100%", maxWidth: 380 }}>
+      <div style={{ width: "100%", maxWidth: 400 }}>
 
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <Link href="/dashboard" style={{
-            fontSize: 22, fontWeight: 800, color: "var(--text-primary)",
+            fontSize: 26, fontWeight: 800, color: "var(--text-primary)",
             textDecoration: "none", letterSpacing: "-0.02em",
           }}>LinguaLink</Link>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", marginTop: 8 }}>
             {mode === "login" ? "Welcome back" : "Start learning today"}
           </p>
         </div>
 
         <div style={{
           background: "var(--bg-secondary)", borderRadius: 16,
-          padding: "28px 24px", border: "0.5px solid var(--border-subtle)",
+          padding: "30px 26px", border: "0.5px solid var(--border-subtle)",
         }}>
           {/* Tab toggle */}
           <div style={{
             display: "flex", background: "var(--bg-tertiary)",
-            borderRadius: 9, padding: 3, marginBottom: 24, gap: 3,
+            borderRadius: 9, padding: 3, marginBottom: 26, gap: 3,
           }}>
             {(["login", "signup"] as const).map((m) => (
               <button key={m} onClick={() => { setMode(m); setError(""); }} style={{
-                flex: 1, padding: "7px 0", borderRadius: 7, border: "none",
+                flex: 1, padding: "8px 0", borderRadius: 7, border: "none",
                 background: mode === m ? "var(--bg-secondary)" : "transparent",
                 color: mode === m ? "var(--text-primary)" : "var(--text-muted)",
-                fontSize: 12, fontWeight: mode === m ? 600 : 400,
+                fontSize: 13, fontWeight: mode === m ? 600 : 400,
                 cursor: "pointer", fontFamily: "inherit",
                 boxShadow: mode === m ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
                 transition: "all 0.15s",
@@ -81,7 +80,7 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {mode === "signup" && (
               <div>
                 <label style={LABEL}>YOUR NAME</label>
@@ -105,15 +104,15 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <p style={{ fontSize: 11, color: "var(--accent-red)", marginTop: -4 }}>{error}</p>
+              <p style={{ fontSize: 12, color: "var(--accent-red)", marginTop: -4 }}>{error}</p>
             )}
 
             <button
               onClick={handleSubmit}
               style={{
                 width: "100%", background: "var(--accent-blue)", color: "#fff",
-                border: "none", borderRadius: 9, padding: "11px 0",
-                fontSize: 13, fontWeight: 700, cursor: "pointer",
+                border: "none", borderRadius: 9, padding: "13px 0",
+                fontSize: 14, fontWeight: 700, cursor: "pointer",
                 fontFamily: "inherit", marginTop: 4, transition: "opacity 0.15s",
               }}
               onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
@@ -124,7 +123,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p style={{ textAlign: "center", fontSize: 11, color: "var(--text-hint)", marginTop: 20 }}>
+        <p style={{ textAlign: "center", fontSize: 12, color: "var(--text-hint)", marginTop: 20 }}>
           By continuing you agree to our Terms & Privacy Policy.
         </p>
       </div>

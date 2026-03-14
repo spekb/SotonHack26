@@ -31,9 +31,11 @@ function CallScreen() {
   const [elapsed, setElapsed] = useState(0);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
+  const [userInitial, setUserInitial] = useState("?");
 
   useEffect(() => {
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    setUserInitial(sessionStorage.getItem("ll_user_name")?.[0]?.toUpperCase() ?? "?");
     return () => clearInterval(t);
   }, []);
 
@@ -49,18 +51,18 @@ function CallScreen() {
       {/* Top bar */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "10px 18px", background: "var(--bg-secondary)",
+        padding: "11px 18px", background: "var(--bg-secondary)",
         borderBottom: "0.5px solid var(--border-subtle)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div className="live-dot" style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--accent-red)" }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>LinguaLink</span>
-          <span style={{ fontSize: 11, color: "var(--text-faint)" }}>·</span>
-          <span style={{ fontSize: 11, color: "var(--text-faint)", fontFamily: "var(--font-mono, monospace)" }}>{fmt(elapsed)}</span>
+          <div className="live-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--accent-red)" }} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>LinguaLink</span>
+          <span style={{ fontSize: 12, color: "var(--text-faint)" }}>·</span>
+          <span style={{ fontSize: 12, color: "var(--text-faint)", fontFamily: "var(--font-mono, monospace)" }}>{fmt(elapsed)}</span>
         </div>
         <div style={{
-          fontSize: 10, color: "var(--text-muted)", background: "var(--bg-tertiary)",
-          borderRadius: 6, padding: "3px 10px", fontWeight: 500,
+          fontSize: 11, color: "var(--text-muted)", background: "var(--bg-tertiary)",
+          borderRadius: 6, padding: "4px 12px", fontWeight: 500,
         }}>PT → DE</div>
       </div>
 
@@ -75,31 +77,31 @@ function CallScreen() {
         }}>
           <div style={{ textAlign: "center" }}>
             <div style={{
-              width: 72, height: 72, borderRadius: "50%",
+              width: 78, height: 78, borderRadius: "50%",
               background: "var(--accent-blue-bg)", border: "2px solid var(--accent-blue)",
-              margin: "0 auto 12px", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 26, fontWeight: 700, color: "var(--accent-blue)",
+              margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, fontWeight: 700, color: "var(--accent-blue)",
             }}>M</div>
-            <p style={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 500 }}>Maria</p>
-            <p style={{ fontSize: 10, color: "var(--text-faint)", marginTop: 3 }}>São Paulo, Brazil</p>
+            <p style={{ fontSize: 15, color: "var(--text-secondary)", fontWeight: 500 }}>Maria</p>
+            <p style={{ fontSize: 12, color: "var(--text-faint)", marginTop: 4 }}>São Paulo, Brazil</p>
           </div>
 
-          {/* Native badge */}
+          {/* Level badge */}
           <div style={{
             position: "absolute", top: 12, left: 12,
-            fontSize: 9, color: "var(--accent-blue)",
+            fontSize: 11, color: "var(--accent-blue)",
             background: "rgba(10,132,255,0.15)", border: "0.5px solid rgba(10,132,255,0.3)",
-            borderRadius: 5, padding: "3px 8px", fontWeight: 600,
+            borderRadius: 5, padding: "4px 10px", fontWeight: 600,
           }}>Native PT</div>
 
           {/* Transcription */}
           <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0,
-            background: "rgba(0,0,0,0.65)", padding: "8px 14px",
+            background: "rgba(0,0,0,0.65)", padding: "10px 16px",
             borderTop: "0.5px solid var(--border-subtle)",
           }}>
-            <p style={{ fontSize: 9, color: "var(--text-faint)", marginBottom: 2 }}>Transcription</p>
-            <p style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.45 }}>
+            <p style={{ fontSize: 11, color: "var(--text-faint)", marginBottom: 3 }}>Transcription</p>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.45 }}>
               "Eu aprendo alemão há dois anos..."
             </p>
           </div>
@@ -112,12 +114,12 @@ function CallScreen() {
         }}>
           <div style={{ textAlign: "center" }}>
             <div style={{
-              width: 72, height: 72, borderRadius: "50%",
+              width: 78, height: 78, borderRadius: "50%",
               background: "var(--accent-green-bg)", border: "2px solid var(--accent-green)",
-              margin: "0 auto 12px", display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 26, fontWeight: 700, color: "var(--accent-green)",
-            }}>Y</div>
-            <p style={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 500 }}>You</p>
+              margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, fontWeight: 700, color: "var(--accent-green)",
+            }}>{userInitial}</div>
+            <p style={{ fontSize: 15, color: "var(--text-secondary)", fontWeight: 500 }}>You</p>
           </div>
 
           {/* Controls */}
@@ -127,11 +129,11 @@ function CallScreen() {
               { label: camOn ? "📷" : "🚫", active: camOn, toggle: () => setCamOn((v) => !v) },
             ].map((b, i) => (
               <button key={i} onClick={b.toggle} style={{
-                width: 28, height: 28, borderRadius: "50%",
+                width: 32, height: 32, borderRadius: "50%",
                 background: b.active ? "rgba(44,44,46,0.85)" : "rgba(255,55,95,0.3)",
                 border: `0.5px solid ${b.active ? "var(--border-subtle)" : "var(--accent-red)"}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", fontSize: 11, transition: "all 0.15s",
+                cursor: "pointer", fontSize: 13, transition: "all 0.15s",
               }}>{b.label}</button>
             ))}
           </div>
@@ -144,8 +146,8 @@ function CallScreen() {
         background: "var(--bg-secondary)", borderTop: "0.5px solid var(--border-subtle)",
         borderBottom: "0.5px solid var(--border-subtle)",
       }}>
-        {/* Maria stats */}
-        <div style={{ display: "flex", gap: 20, padding: "9px 18px", borderRight: "0.5px solid var(--border-subtle)", alignItems: "center" }}>
+        {/* Partner stats */}
+        <div style={{ display: "flex", gap: 22, padding: "10px 20px", borderRight: "0.5px solid var(--border-subtle)", alignItems: "center" }}>
           {[
             { label: "LEVEL",   value: "A2",   color: "var(--accent-blue)" },
             { label: "SESSIONS",value: "38",   color: "var(--text-secondary)" },
@@ -153,58 +155,56 @@ function CallScreen() {
             { label: "MATCH",   value: "94%",  color: "var(--accent-purple)" },
           ].map((s) => (
             <div key={s.label}>
-              <p style={{ fontSize: 8, color: "var(--text-faint)", fontWeight: 600, marginBottom: 1 }}>{s.label}</p>
-              <p style={{ fontSize: 13, color: s.color, fontWeight: 700 }}>{s.value}</p>
+              <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
+              <p style={{ fontSize: 14, color: s.color, fontWeight: 700 }}>{s.value}</p>
             </div>
           ))}
         </div>
         {/* Your stats */}
-        <div style={{ display: "flex", gap: 20, padding: "9px 18px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL",     value: "B2",   color: "var(--accent-green)" },
-            { label: "SESSIONS",  value: "142",  color: "var(--text-secondary)" },
-            { label: "VOCAB",     value: "2,340",color: "var(--text-secondary)" },
-            { label: "USED TODAY",value: "47",   color: "var(--accent-orange)" },
+            { label: "LEVEL",     value: "B2",    color: "var(--accent-green)" },
+            { label: "SESSIONS",  value: "142",   color: "var(--text-secondary)" },
+            { label: "VOCAB",     value: "2,340", color: "var(--text-secondary)" },
+            { label: "USED TODAY",value: "47",    color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
-              <p style={{ fontSize: 8, color: "var(--text-faint)", fontWeight: 600, marginBottom: 1 }}>{s.label}</p>
-              <p style={{ fontSize: 13, color: s.color, fontWeight: 700 }}>{s.value}</p>
+              <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
+              <p style={{ fontSize: 14, color: s.color, fontWeight: 700 }}>{s.value}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Prompt panel */}
-      <div style={{ padding: "12px 18px", background: "var(--bg-primary)" }}>
+      <div style={{ padding: "14px 20px", background: "var(--bg-primary)" }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-          {/* Active topic */}
           <div style={{ flex: "1.1" }}>
-            <p style={{ fontSize: 8, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 6 }}>
+            <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 7 }}>
               CURRENT TOPIC
             </p>
             <div style={{
-              fontSize: 11, color: "var(--text-primary)",
+              fontSize: 13, color: "var(--text-primary)",
               background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)",
               borderLeft: "2.5px solid var(--accent-blue)",
-              borderRadius: 8, padding: "9px 12px", lineHeight: 1.5,
+              borderRadius: 8, padding: "10px 14px", lineHeight: 1.5,
             }}>
               "{PROMPTS[activePrompt]}"
             </div>
           </div>
-          {/* Prompt chips */}
           <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 8, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 6 }}>
+            <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.06em", marginBottom: 7 }}>
               MORE PROMPTS
             </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {PROMPTS.filter((_, i) => i !== activePrompt).slice(0, 4).map((p, i) => (
                 <button
                   key={i}
                   onClick={() => setActivePrompt(PROMPTS.indexOf(p))}
                   style={{
-                    fontSize: 10, color: "var(--text-secondary)",
+                    fontSize: 11, color: "var(--text-secondary)",
                     background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)",
-                    borderRadius: 6, padding: "5px 10px", cursor: "pointer",
+                    borderRadius: 6, padding: "6px 11px", cursor: "pointer",
                     fontFamily: "inherit", transition: "all 0.15s",
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent-blue)"; e.currentTarget.style.color = "var(--accent-blue)"; }}
@@ -221,28 +221,27 @@ function CallScreen() {
       {/* Controls bar */}
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-        padding: "12px 18px", background: "var(--bg-secondary)",
+        padding: "13px 20px", background: "var(--bg-secondary)",
         borderTop: "0.5px solid var(--border-subtle)",
       }}>
         <button style={{
           background: "var(--bg-tertiary)", border: "none",
-          color: "var(--text-muted)", borderRadius: 8, padding: "8px 18px",
-          fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 500,
+          color: "var(--text-muted)", borderRadius: 8, padding: "9px 20px",
+          fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 500,
         }}>Report</button>
         <Link href="/dashboard" style={{
           background: "var(--accent-red)", border: "none",
-          color: "#fff", borderRadius: 8, padding: "9px 30px",
-          fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
-          textDecoration: "none", letterSpacing: "0.01em",
-          transition: "opacity 0.15s",
+          color: "#fff", borderRadius: 8, padding: "10px 32px",
+          fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+          textDecoration: "none", letterSpacing: "0.01em", transition: "opacity 0.15s",
         }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >End call</Link>
         <button style={{
           background: "var(--accent-blue)", border: "none",
-          color: "#fff", borderRadius: 8, padding: "9px 24px",
-          fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+          color: "#fff", borderRadius: 8, padding: "10px 26px",
+          fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
           letterSpacing: "0.01em", transition: "opacity 0.15s",
         }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
