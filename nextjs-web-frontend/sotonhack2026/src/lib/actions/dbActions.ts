@@ -1,0 +1,120 @@
+'use server';
+
+import mongoose from 'mongoose';
+import '../mongoose'; // Ensure mongoose is connected
+
+export type Conversation = {
+    id: string;
+    vocab : string[];
+    new_vocab: string[][];
+    participants: {name: string, id: string}[];
+    topics: string[];
+    dateStamp : Date;
+    length: number;
+};
+
+export type User = {
+    name: string;
+    id: string;
+    total_time: number;
+    conversations: Conversation[];
+    vocab: string[];
+};
+
+// Define Mongoose Schema & Models
+const ConversationSchema = new mongoose.Schema({
+    id: { type: String, required: true, unique: true },
+    vocab: [String],
+    new_vocab: [[String]],
+    participants: [{ name: String, id: String }],
+    topics: [String],
+    dateStamp: Date,
+    length: Number
+});
+
+const UserSchema = new mongoose.Schema({
+    id: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    total_time: Number,
+    conversations: [ConversationSchema],
+    vocab: [String]
+});
+
+// Avoid OverwriteModelError
+const ConversationModel = mongoose.models.Conversation || mongoose.model('Conversation', ConversationSchema);
+const UserModel = mongoose.models.User || mongoose.model('User', UserSchema);
+
+export async function getUserById(id: string): Promise<User | null> {
+    try {
+        const user = await UserModel.findOne({ id }).lean();
+        if (!user) return null;
+        
+        return {
+            id: user.id,
+            name: user.name,
+            total_time: user.total_time as number,
+            conversations: (user.conversations as any[]).map(conv => ({
+                id: conv.id,
+                vocab: conv.vocab,
+                new_vocab: conv.new_vocab,
+                participants: conv.participants,
+                topics: conv.topics,
+                dateStamp: conv.dateStamp,
+                length: conv.length
+            })),
+            vocab: user.vocab as string[]
+        };
+    } catch (error) {
+        console.error("Error fetching user by ID:", error);
+        return null;
+    }
+}
+
+export async function getUserByName(name: string): Promise<User | null> {
+    try {
+        const user = await UserModel.findOne({ name }).lean();
+        if (!user) return null;
+
+        return {
+            id: user.id,
+            name: user.name,
+            total_time: user.total_time as number,
+            conversations: (user.conversations as any[]).map(conv => ({
+                id: conv.id,
+                vocab: conv.vocab,
+                new_vocab: conv.new_vocab,
+                participants: conv.participants,
+                topics: conv.topics,
+                dateStamp: conv.dateStamp,
+                length: conv.length
+            })),
+            vocab: user.vocab as string[]
+        };
+    } catch (error) {
+        console.error("Error fetching user by name:", error);
+        return null;
+    }
+}
+
+export async function getConversationById(id: string): Promise<Conversation | null> {
+    try {
+        const conversation = await ConversationModel.findOne({ id }).lean();
+        if (!conversation) return null;
+
+        return {
+            id: conversation.id,
+            vocab: conversation.vocab as string[],
+            new_vocab: conversation.new_vocab as string[][],
+            participants: (conversation.participants as any[]).map(p => ({
+                name: p.name,
+                id: p.id
+            })),
+            topics: conversation.topics as string[],
+            dateStamp: conversation.dateStamp as Date,
+            length: conversation.length as number
+        };
+    } catch (error) {
+        console.error("Error fetching conversation by ID:", error);
+        return null;
+    }
+}
