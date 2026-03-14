@@ -444,6 +444,11 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
         skillIndex = duoScore;
       }
       
+      sessionStorage.setItem("ll_native_lang", native);
+      sessionStorage.setItem("ll_learning_lang", learn);
+      sessionStorage.setItem("ll_cefr", cefr);
+      sessionStorage.setItem("ll_duo_score", duoScore.toString());
+
       //console.log([userName, native, [learn], skillIndex]);
       await insertUserByDetails(userName, native, [learn], skillIndex);
       router.push("/dashboard");

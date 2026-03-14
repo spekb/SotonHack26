@@ -6,8 +6,12 @@ export type DashboardStats = {
   activity_heatmap: Record<string, number>;
   popular_topics: [string, number][];
   avg_words_per_session: number;
-  avg_words_per_turn: number;
   new_words_per_minute: number;
+  weekly_conversation_counts: number[];
+  skill_level: number;
+  cefr_level: string;   // ← ADD THIS
+  cefr_index: number;
+  learning_lang: string;
 };
 
 export type DashboardResponse = {

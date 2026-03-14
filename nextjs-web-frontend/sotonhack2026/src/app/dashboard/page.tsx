@@ -18,43 +18,69 @@ const WEEKS = [32, 52, 47, 68, 60, 65, 80, 90];
 const CEFR_LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 const CEFR_ACTIVE = 3;
 
-function generateHeatmap() {
+// function generateHeatmap() {
+//   const shades = ["#3a3a3c", "#1a3a4a", "#0a5080", "#0a84ff"];
+//   return Array.from({ length: 24 }, () =>
+//     Array.from({ length: 7 }, () => {
+//       const v = Math.random();
+//       return v < 0.38 ? shades[0] : v < 0.58 ? shades[1] : v < 0.78 ? shades[2] : shades[3];
+//     })
+//   );
+// }
+
+function buildHeatmap(activityHeatmap: Record<string, number>): string[] {
   const shades = ["#3a3a3c", "#1a3a4a", "#0a5080", "#0a84ff"];
-  return Array.from({ length: 24 }, () =>
-    Array.from({ length: 7 }, () => {
-      const v = Math.random();
-      return v < 0.38 ? shades[0] : v < 0.58 ? shades[1] : v < 0.78 ? shades[2] : shades[3];
-    })
-  );
+  const max = Math.max(...Object.values(activityHeatmap), 1);
+  
+  // Build last 168 days (24 weeks × 7 days)
+  const days: string[] = [];
+  for (let i = 167; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const key = date.toISOString().split("T")[0];
+    const count = activityHeatmap[key] || 0;
+    const ratio = count / max;
+    const color = ratio === 0 ? shades[0] : ratio < 0.33 ? shades[1] : ratio < 0.66 ? shades[2] : shades[3];
+    days.push(color);
+  }
+  return days;
 }
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const router = useRouter();
-  const [heatmap, setHeatmap] = useState<string[][]>([]);
+  // const [heatmap, setHeatmap] = useState<string[][]>([]);
   const [userInitial, setUserInitial] = useState("?");
 
   useEffect(() => {
-    setHeatmap(generateHeatmap());
+    // setHeatmap(generateHeatmap());
     const storedName = sessionStorage.getItem("ll_user_name") || "";
     setUserInitial(storedName.charAt(0).toUpperCase() || "?");
 
     // Fetch stats once on mount
     const user = {
       id: "1",
-      name: "Test User",
-      total_time: 18540,
-      conversations: [], // replace with real user data later
+      name: storedName,
+      total_time: 0,
+      conversations: [],
       vocab: [],
+      native_lang: sessionStorage.getItem("ll_native_lang") || "English",
+      learning_langs: [sessionStorage.getItem("ll_learning_lang") || ""],
+      skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
+      cefr_level: sessionStorage.getItem("ll_cefr") || "A1",  // NEW
     };
 
     fetchDashboardStats(user)
-      .then(data => {
-        setStats(data.stats);
-        setStatsLoading(false);
-      })
-      .catch(() => setStatsLoading(false));
+    .then(data => {
+      console.log("stats response:", data);
+      setStats(data.stats);
+      setStatsLoading(false);
+    })
+    .catch((err) => {
+      console.error("stats fetch failed:", err);
+      setStatsLoading(false);
+    });
   }, []);
 
   const handleLogout = () => {
@@ -111,7 +137,7 @@ export default function Dashboard() {
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "20px 16px" }}>
 
           {/* CTA */}
-          <div style={{
+          {/* <div style={{
             background: "var(--bg-secondary)", borderRadius: 14,
             padding: "20px 22px", marginBottom: 14,
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -121,6 +147,26 @@ export default function Dashboard() {
             <div>
               <p style={{ fontSize: 11, color: "var(--accent-blue)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 4 }}>READY TO PRACTICE</p>
               <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>German · B2</h1>
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Match with speakers near your level</p>
+            </div>
+            <Link href="/call" style={{
+              background: "var(--accent-green)", color: "#fff", borderRadius: 10,
+              padding: "13px 28px", fontSize: 14, fontWeight: 700,
+              textDecoration: "none", whiteSpace: "nowrap",
+            }}>Start call</Link>
+          </div> */}
+          <div style={{
+            background: "var(--bg-secondary)", borderRadius: 14,
+            padding: "20px 22px", marginBottom: 14,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            flexWrap: "wrap", gap: 12,
+            border: "0.5px solid var(--border-subtle)",
+          }}>
+            <div>
+              <p style={{ fontSize: 11, color: "var(--accent-blue)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 4 }}>READY TO PRACTICE</p>
+              <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>
+                {stats ? `${stats.learning_lang} · ${stats.cefr_level}` : "Loading..."}
+              </h1>
               <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Match with speakers near your level</p>
             </div>
             <Link href="/call" style={{
@@ -170,7 +216,7 @@ export default function Dashboard() {
               {[
                 { label: "SESSIONS",      value: stats.total_interactions.toString(),        sub: `+${stats.new_words_this_week.length} new words this week`, subColor: "var(--accent-green)" },
                 { label: "WORDS LEARNED", value: stats.most_used_words.length.toString(),    sub: `avg ${stats.avg_words_per_session.toFixed(1)} per session`,  subColor: "var(--accent-blue)" },
-                { label: "TOTAL TIME",    value: `${Math.round(stats.total_convo_time_seconds / 60)}m`, sub: `${stats.avg_words_per_turn.toFixed(1)} words/turn avg`,    subColor: "var(--accent-orange)" },
+                { label: "TOTAL TIME",    value: `${Math.round(stats.total_convo_time_seconds / 60)}m`, sub: `${stats.total_convo_time_seconds.toFixed(1)} words/turn avg`,    subColor: "var(--accent-orange)" },
                 { label: "NEW THIS WEEK", value: stats.new_words_this_week.length.toString(), sub: `${stats.new_words_per_minute.toFixed(1)} new words/min`,      subColor: "var(--accent-purple)" },
               ].map((s) => (
                 <div key={s.label} style={{
@@ -190,7 +236,7 @@ export default function Dashboard() {
           )}
 
           {/* Heatmap */}
-          <div style={{
+          {/* <div style={{
             background: "var(--bg-secondary)", borderRadius: 12,
             padding: "18px 20px", marginBottom: 14,
             border: "0.5px solid var(--border-subtle)",
@@ -216,25 +262,42 @@ export default function Dashboard() {
               ))}
               <span style={{ fontSize: 11, color: "var(--text-hint)" }}>more</span>
             </div>
+          </div> */}
+
+          {/* Heatmap */}
+          <div style={{
+            background: "var(--bg-secondary)", borderRadius: 12,
+            padding: "18px 20px", marginBottom: 14,
+            border: "0.5px solid var(--border-subtle)",
+          }}>
+            <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 12 }}>
+              CONVERSATION ACTIVITY · LAST 24 WEEKS
+            </p>
+            <div style={{ display: "flex", gap: 3 }}>
+              {(() => {
+                const days = stats ? buildHeatmap(stats.activity_heatmap) : Array(168).fill("#3a3a3c");
+                const cols: string[][] = [];
+                for (let i = 0; i < 24; i++) cols.push(days.slice(i * 7, i * 7 + 7));
+                return cols.map((col, ci) => (
+                  <div key={ci} style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1, minWidth: 0 }}>
+                    {col.map((color, ri) => (
+                      <div key={ri} style={{ height: 8, borderRadius: 2, background: color }} />
+                    ))}
+                  </div>
+                ));
+              })()}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 10, justifyContent: "flex-end" }}>
+              <span style={{ fontSize: 11, color: "var(--text-hint)" }}>less</span>
+              {["#3a3a3c","#1a3a4a","#0a5080","#0a84ff"].map((c) => (
+                <div key={c} style={{ width: 10, height: 10, borderRadius: 2, background: c }} />
+              ))}
+              <span style={{ fontSize: 11, color: "var(--text-hint)" }}>more</span>
+            </div>
           </div>
 
           {/* Bottom row */}
-          <div className="dash-grid-2">
-
-            {/* <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
-              <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 14 }}>POPULAR TOPICS</p>
-              <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-                {TOPICS.map((t) => (
-                  <div key={t.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 13, color: "var(--text-secondary)", width: 100, flexShrink: 0 }}>{t.label}</span>
-                    <div style={{ flex: 1, background: "var(--bg-tertiary)", borderRadius: 3, height: 5 }}>
-                      <div style={{ height: "100%", background: t.color, borderRadius: 3, width: `${t.pct}%` }} />
-                    </div>
-                    <span style={{ fontSize: 11, color: "var(--text-faint)", minWidth: 32, textAlign: "right" }}>{t.pct}%</span>
-                  </div>
-                ))}
-              </div>
-            </div> */}
+          {/* <div className="dash-grid-2">
 
             <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
               <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 14 }}>AVG SESSION LENGTH · WEEKS (MIN)</p>
@@ -276,7 +339,94 @@ export default function Dashboard() {
               </div>
             </div>
 
+          </div> */}
+
+        {/* Bottom row */}
+        <div className="dash-grid-2">
+          {/* Weekly bar chart */}
+          <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
+            <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 14 }}>CONVERSATIONS PER WEEK · LAST 8 WEEKS</p>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 64, marginBottom: 10 }}>
+              {(stats?.weekly_conversation_counts ?? WEEKS).map((h, i) => {
+                const max = Math.max(...(stats?.weekly_conversation_counts ?? WEEKS), 1);
+                const pct = Math.round((h / max) * 100);
+                const isLast = i === 7;
+                return (
+                  <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", height: "100%", gap: 4 }}>
+                    <div style={{
+                      width: "100%", height: `${pct}%`, borderRadius: "3px 3px 0 0",
+                      background: isLast ? "var(--accent-blue)" : i >= 4 ? "#0a5080" : "var(--bg-tertiary)",
+                      border: isLast ? "0.5px solid #5ab0ff" : "none",
+                    }} />
+                    <span style={{ fontSize: 10, color: isLast ? "var(--accent-blue)" : "var(--text-hint)" }}>w{i + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>this week</span>
+              <span style={{ fontSize: 12, color: "var(--accent-blue)", fontWeight: 600 }}>
+                {stats?.weekly_conversation_counts?.[7] ?? 0} convos
+              </span>
+            </div>
+
+            {/* CEFR */}
+            <div style={{ borderTop: "0.5px solid var(--border-subtle)", paddingTop: 12 }}>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, marginBottom: 8 }}>
+                CEFR · {stats?.learning_lang ?? "..."}
+              </p>
+              {(() => {
+                // skill_level is 1-6 mapping to A1-C2
+                const cefrActive = stats ? stats.cefr_index : CEFR_ACTIVE;
+                return (
+                  <>
+                    <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                      {CEFR_LEVELS.map((l, i) => (
+                        <div key={l} style={{
+                          flex: 1, height: 5, borderRadius: 3,
+                          background: i < cefrActive ? "var(--accent-green)" : i === cefrActive ? "var(--accent-blue)" : "var(--bg-tertiary)",
+                        }} />
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      {CEFR_LEVELS.map((l, i) => (
+                        <span key={l} style={{
+                          fontSize: 10,
+                          color: i === cefrActive ? "var(--accent-blue)" : "var(--text-hint)",
+                          fontWeight: i === cefrActive ? 700 : 400,
+                        }}>{l}</span>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           </div>
+
+          {/* Popular topics */}
+          <div style={{ background: "var(--bg-secondary)", borderRadius: 12, padding: "18px 20px", border: "0.5px solid var(--border-subtle)" }}>
+            <p style={{ fontSize: 11, color: "var(--text-faint)", fontWeight: 600, letterSpacing: "0.07em", marginBottom: 14 }}>POPULAR TOPICS</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+              {(stats?.popular_topics ?? []).map(([label, count], i) => {
+                const colors = ["var(--accent-blue)", "var(--accent-green)", "var(--accent-orange)", "var(--accent-purple)", "var(--accent-red)"];
+                const max = stats?.popular_topics?.[0]?.[1] ?? 1;
+                const pct = Math.round((count / max) * 100);
+                return (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 13, color: "var(--text-secondary)", width: 100, flexShrink: 0 }}>{label}</span>
+                    <div style={{ flex: 1, background: "var(--bg-tertiary)", borderRadius: 3, height: 5 }}>
+                      <div style={{ height: "100%", background: colors[i], borderRadius: 3, width: `${pct}%` }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: "var(--text-faint)", minWidth: 32, textAlign: "right" }}>{pct}%</span>
+                  </div>
+                );
+              })}
+              {!stats?.popular_topics?.length && (
+                <p style={{ fontSize: 13, color: "var(--text-muted)" }}>No topics yet</p>
+              )}
+            </div>
+          </div>
+        </div>
         </div>
       </div>
     </>
