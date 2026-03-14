@@ -4,7 +4,6 @@ from models import User, Conversation
 
 def calculate_stats(user: User):
     return {
-        "vocab_list": user.vocab,
         "new_words_this_week": get_new_words_this_week(user.conversations),
         "most_used_words": Counter(user.vocab).most_common(10),
         "total_interactions": len(user.conversations),
