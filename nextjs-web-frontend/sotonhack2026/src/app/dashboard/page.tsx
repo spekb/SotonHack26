@@ -149,7 +149,7 @@ export default function Dashboard() {
               <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>German · B2</h1>
               <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Match with speakers near your level</p>
             </div>
-            <Link href="/call" style={{
+            <Link href="/waiting" style={{
               background: "var(--accent-green)", color: "#fff", borderRadius: 10,
               padding: "13px 28px", fontSize: 14, fontWeight: 700,
               textDecoration: "none", whiteSpace: "nowrap",
