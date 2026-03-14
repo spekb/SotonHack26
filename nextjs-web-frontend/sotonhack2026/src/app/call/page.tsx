@@ -116,11 +116,11 @@ function CallScreen() {
         <span style={{ fontSize: 12, color: "var(--text-faint)", fontFamily: "var(--font-mono, monospace)" }}>{fmt(elapsed)}</span>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
-          <div style={{
-            fontSize: 10, color: "var(--accent-blue)", background: "rgba(10,132,255,0.15)",
-            borderRadius: 6, padding: "3px 10px", fontWeight: 600, border: "0.5px solid rgba(10,132,255,0.3)"
-          }}>{callRole === "first" ? "1st User (Host)" : "2nd User"}</div>
-        </div>
+        <div style={{
+          fontSize: 10, color: "var(--accent-blue)", background: "rgba(10,132,255,0.15)",
+          borderRadius: 6, padding: "3px 10px", fontWeight: 600, border: "0.5px solid rgba(10,132,255,0.3)"
+        }}>{callRole === "first" ? "1st User (Host)" : "2nd User"}</div>
+      </div>
 
       {/* Video feeds */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", flex: 1 }}>
@@ -130,10 +130,10 @@ function CallScreen() {
           position: "relative", background: "#0e0e14",
           borderRight: "0.5px solid var(--border-subtle)",
           minHeight: 320, display: "flex", alignItems: "center", justifyContent: "center",
-       overflow: "hidden",
+          overflow: "hidden",
         }}>
-          <iframe 
-            src={`https://vdo.ninja/?view=${callRole === "first" ? idSecond : idFirst}`}
+          <iframe
+            src={`https://vdo.ninja/?view=${callRole === "first" ? idSecond : idFirst}&cc`}
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none", zIndex: 0 }}
             allow="camera; microphone; display-capture; autoplay"
           />
@@ -155,16 +155,16 @@ function CallScreen() {
         <div style={{
           position: "relative", background: "#111113",
           minHeight: 320, display: "flex", alignItems: "center", justifyContent: "center",
-                 overflow: "hidden",
+          overflow: "hidden",
         }}>
-          <iframe 
-            src={`https://vdo.ninja/?push=${callRole === "first" ? idFirst : idSecond}`}
+          <iframe
+            src={`https://vdo.ninja/?push=${callRole === "first" ? idFirst : idSecond}&chatbutton=0&nohangupbutton&as&vd=1&ad&wc&ns&trans=en-US`}
             style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none", zIndex: 0 }}
             allow="camera; microphone; display-capture; autoplay"
           />
 
           {/* Controls */}
-          <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 6, zIndex: 1 }}>
+          {/* <div style={{ position: "absolute", top: 12, right: 12, display: "flex", gap: 6, zIndex: 1 }}>
             {[
               { label: micOn ? "🎤" : "🔇", active: micOn, toggle: () => setMicOn((v) => !v) },
               { label: camOn ? "📷" : "🚫", active: camOn, toggle: () => setCamOn((v) => !v) },
@@ -177,7 +177,7 @@ function CallScreen() {
                 cursor: "pointer", fontSize: 13, transition: "all 0.15s",
               }}>{b.label}</button>
             ))}
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -189,10 +189,10 @@ function CallScreen() {
       }}>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", borderRight: "0.5px solid var(--border-subtle)", alignItems: "center" }}>
           {[
-            { label: "LEVEL",    value: "A2",  color: "var(--accent-blue)" },
-            { label: "SESSIONS", value: "38",  color: "var(--text-secondary)" },
-            { label: "RATING",   value: "4.8", color: "var(--accent-orange)" },
-            { label: "MATCH",    value: "94%", color: "var(--accent-purple)" },
+            { label: "LEVEL", value: "A2", color: "var(--accent-blue)" },
+            { label: "SESSIONS", value: "38", color: "var(--text-secondary)" },
+            { label: "RATING", value: "4.8", color: "var(--accent-orange)" },
+            { label: "MATCH", value: "94%", color: "var(--accent-purple)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
@@ -202,10 +202,10 @@ function CallScreen() {
         </div>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL",      value: "B2",    color: "var(--accent-green)" },
-            { label: "SESSIONS",   value: "142",   color: "var(--text-secondary)" },
-            { label: "VOCAB",      value: "2,340", color: "var(--text-secondary)" },
-            { label: "USED TODAY", value: "47",    color: "var(--accent-orange)" },
+            { label: "LEVEL", value: "B2", color: "var(--accent-green)" },
+            { label: "SESSIONS", value: "142", color: "var(--text-secondary)" },
+            { label: "VOCAB", value: "2,340", color: "var(--text-secondary)" },
+            { label: "USED TODAY", value: "47", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
