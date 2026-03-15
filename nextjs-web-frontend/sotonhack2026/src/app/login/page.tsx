@@ -40,6 +40,7 @@ export default function LoginPage() {
         return setError("User account does not exist.");
       } else {
         sessionStorage.setItem("ll_user_name", displayName);
+        sessionStorage.setItem("ll_user_id", user.id);
         sessionStorage.setItem("ll_native_lang", user.native_lang ?? "English");
         sessionStorage.setItem("ll_learn_lang", user.learning_langs?.[0] ?? "");
         sessionStorage.setItem("ll_skill_level", user.skill_level?.toString() ?? "");

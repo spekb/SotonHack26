@@ -29,8 +29,25 @@ function CallScreen() {
   const [elapsed, setElapsed] = useState(0);
   const [userInitial, setUserInitial] = useState("?");
   const [prompts, setPrompts] = useState<string[]>([]);
+  const [userStats, setUserStats] = useState<{
+    cefr_level: string;
+    total_interactions: number;
+    most_used_words: [string, number][];
+    new_words_this_week: string[];
+  } | null>(null);
+  const [partnerStats, setPartnerStats] = useState<{
+    cefr_level: string;
+    total_interactions: number;
+    most_used_words: [string, number][];
+    new_words_this_week: string[];
+  } | null>(null);
 
-  // ── Assign call role ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+    setUserInitial(sessionStorage.getItem("ll_user_name")?.[0]?.toUpperCase() ?? "?");
+    return () => clearInterval(t);
+  }, []);
+
   useEffect(() => {
     const callId = searchParams.get("id");
     if (!callId) {
@@ -39,11 +56,12 @@ function CallScreen() {
       params.set("id", newId);
       router.replace(`${pathname}?${params.toString()}`);
     } else {
-      let userId = sessionStorage.getItem("call_user_id");
+      let userId = sessionStorage.getItem("ll_user_id") ?? sessionStorage.getItem("ll_user_name") ?? "";
       if (!userId) {
         userId = Math.random().toString(36).substring(2, 10);
-        sessionStorage.setItem("call_user_id", userId);
       }
+      sessionStorage.setItem("call_user_id", userId);
+  
       fetch(`/api/call/${callId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,23 +73,77 @@ function CallScreen() {
           else if (data.role === "first") setCallRole("first");
           else if (data.role === "second") setCallRole("second");
         });
+  
+      const partnerPoll = setInterval(() => {
+        const uid = sessionStorage.getItem("call_user_id") ?? "";
+        fetch(`/api/call/${callId}/partner`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: uid })
+        })
+          .then(r => r.json())
+          .then(partnerData => {
+            if (partnerData?.partner) {
+              clearInterval(partnerPoll);
+              fetch("http://localhost:8000/api/process-conversation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id: partnerData.partner.id,
+                  name: partnerData.partner.name,
+                  total_time: partnerData.partner.total_time,
+                  conversations: partnerData.partner.conversations,
+                  vocab: partnerData.partner.vocab,
+                  native_lang: partnerData.partner.native_lang,
+                  learning_langs: partnerData.partner.learning_langs,
+                  skill_level: partnerData.partner.skill_level,
+                  cefr_level: partnerData.partner.cefr_level ?? "A1",
+                }),
+              })
+                .then(r => r.json())
+                .then(d => { if (d.stats) setPartnerStats(d.stats); });
+            }
+          });
+      }, 3000);
+  
+      return () => clearInterval(partnerPoll);
     }
   }, [searchParams, pathname, router]);
 
   // ── Elapsed timer + user initial ────────────────────────────────────────────
   useEffect(() => {
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
-    setUserInitial(sessionStorage.getItem("ll_user_name")?.[0]?.toUpperCase() ?? "?");
-    
-    // TODO: Change this oh please god. This is terrible no good awful code. But it is currently 01:19 and I cannot be fucked to do this properly. It better not crash.
-    getUserByName(sessionStorage.getItem("ll_user_name") as string).then((v) => {
-      generateNewPrompts(v?.cefr_level as ("A1" | "A2" | "B1" | "B2" | "C1" | "C2"), v?.learning_langs[0] as string, 5).then((p) => {
-        if (p.error == null) {
-          setPrompts(p.prompts);
-        }
-      })
+    const name = sessionStorage.getItem("ll_user_name") ?? "?";
+    setUserInitial(name[0]?.toUpperCase() ?? "?");
+  
+    // Fetch user stats
+    const user = {
+      id: sessionStorage.getItem("ll_user_id") ?? "1",
+      name,
+      total_time: 0,
+      conversations: [],
+      vocab: [],
+      native_lang: sessionStorage.getItem("ll_native_lang") || "English",
+      learning_langs: [sessionStorage.getItem("ll_learning_lang") || ""],
+      skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
+      cefr_level: sessionStorage.getItem("ll_cefr") || "A1",
+    };
+  
+    fetch("http://localhost:8000/api/process-conversation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(user),
     })
-
+      .then(r => r.json())
+      .then(data => { if (data.stats) setUserStats(data.stats); });
+  
+    // Fetch prompts via Gemini
+    getUserByName(name).then((v) => {
+      generateNewPrompts(v?.cefr_level as ("A1"|"A2"|"B1"|"B2"|"C1"|"C2"), v?.learning_langs[0] as string, 5).then((p) => {
+        if (p.error == null) setPrompts(p.prompts);
+      });
+    });
+  
     return () => clearInterval(t);
   }, []);
 
@@ -239,12 +311,12 @@ function CallScreen() {
         background: "var(--bg-secondary)", borderTop: "0.5px solid var(--border-subtle)",
         borderBottom: "0.5px solid var(--border-subtle)",
       }}>
-        <div style={{ display: "flex", gap: 22, padding: "10px 20px", borderRight: "0.5px solid var(--border-subtle)", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL",    value: "A2",  color: "var(--accent-blue)" },
-            { label: "SESSIONS", value: "38",  color: "var(--text-secondary)" },
-            { label: "RATING",   value: "4.8", color: "var(--accent-orange)" },
-            { label: "MATCH",    value: "94%", color: "var(--accent-purple)" },
+            { label: "LEVEL",     value: userStats?.cefr_level ?? "...",                          color: "var(--accent-green)" },
+            { label: "SESSIONS",  value: userStats?.total_interactions?.toString() ?? "...",       color: "var(--text-secondary)" },
+            { label: "VOCAB",     value: userStats?.most_used_words?.length?.toString() ?? "...", color: "var(--text-secondary)" },
+            { label: "THIS WEEK", value: userStats?.new_words_this_week?.length?.toString() ?? "...", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
@@ -254,10 +326,10 @@ function CallScreen() {
         </div>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL",      value: "B2",    color: "var(--accent-green)" },
-            { label: "SESSIONS",   value: "142",   color: "var(--text-secondary)" },
-            { label: "VOCAB",      value: "2,340", color: "var(--text-secondary)" },
-            { label: "USED TODAY", value: "47",    color: "var(--accent-orange)" },
+            { label: "LEVEL",     value: partnerStats?.cefr_level ?? "...",                              color: "var(--accent-blue)" },
+            { label: "SESSIONS",  value: partnerStats?.total_interactions?.toString() ?? "...",           color: "var(--text-secondary)" },
+            { label: "VOCAB",     value: partnerStats?.most_used_words?.length?.toString() ?? "...",     color: "var(--text-secondary)" },
+            { label: "THIS WEEK", value: partnerStats?.new_words_this_week?.length?.toString() ?? "...", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
