@@ -32,13 +32,13 @@ function CallScreen() {
   const [userStats, setUserStats] = useState<{
     cefr_level: string;
     total_interactions: number;
-    most_used_words: [string, number][];
+    vocab_size: number;
     new_words_this_week: string[];
   } | null>(null);
   const [partnerStats, setPartnerStats] = useState<{
     cefr_level: string;
     total_interactions: number;
-    most_used_words: [string, number][];
+    vocab_size: number;
     new_words_this_week: string[];
   } | null>(null);
 
@@ -98,7 +98,7 @@ function CallScreen() {
           .then(partnerData => {
             if (partnerData?.partner) {
               clearInterval(partnerPoll);
-              fetch("http://localhost:8000/api/process-conversation", {
+              fetch("http://localhost:8000/api/get-stats", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -124,32 +124,70 @@ function CallScreen() {
   }, [searchParams, pathname, router]);
 
   // ── Elapsed timer + user initial ────────────────────────────────────────────
+  // useEffect(() => {
+  //   const t = setInterval(() => setElapsed((e) => e + 1), 1000);
+  //   const name = sessionStorage.getItem("ll_user_name") ?? "?";
+  //   setUserInitial(name[0]?.toUpperCase() ?? "?");
+  
+  //   // Fetch user stats
+  //   const user = {
+  //     id: sessionStorage.getItem("ll_user_id") ?? "1",
+  //     name,
+  //     total_time: 0,
+  //     conversations: [],
+  //     vocab: [],
+  //     native_lang: sessionStorage.getItem("ll_native_lang") || "English",
+  //     learning_langs: [sessionStorage.getItem("ll_learning_lang") || ""],
+  //     skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
+  //     cefr_level: sessionStorage.getItem("ll_cefr") || "A1",
+  //   };
+  
+  //   fetch("http://localhost:8000/api/process-conversation", {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json" },
+  //     body: JSON.stringify(user),
+  //   })
+  //     .then(r => r.json())
+  //     .then(data => { if (data.stats) setUserStats(data.stats); });
+  
+  //   // Fetch prompts via Gemini
+  //   getUserByName(name).then((v) => {
+  //     generateNewPrompts(v?.cefr_level as ("A1"|"A2"|"B1"|"B2"|"C1"|"C2"), v?.learning_langs[0] as string, 5).then((p) => {
+  //       if (p.error == null) setPrompts(p.prompts);
+  //     });
+  //   });
+  
+  //   return () => clearInterval(t);
+  // }, []);
+
   useEffect(() => {
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
     const name = sessionStorage.getItem("ll_user_name") ?? "?";
     setUserInitial(name[0]?.toUpperCase() ?? "?");
-
-    // Fetch user stats
-    const user = {
-      id: sessionStorage.getItem("ll_user_id") ?? "1",
-      name,
-      total_time: 0,
-      conversations: [],
-      vocab: [],
-      native_lang: sessionStorage.getItem("ll_native_lang") || "English",
-      learning_langs: [sessionStorage.getItem("ll_learning_lang") || ""],
-      skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
-      cefr_level: sessionStorage.getItem("ll_cefr") || "A1",
-    };
-
-    fetch("http://localhost:8000/api/process-conversation", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(user),
-    })
-      .then(r => r.json())
-      .then(data => { if (data.stats) setUserStats(data.stats); });
-
+  
+    // Fetch real user from MongoDB first, then get stats
+    getUserByName(name).then(realUser => {
+      if (!realUser) return;
+  
+      fetch("http://localhost:8000/api/get-stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: realUser.id,
+          name: realUser.name,
+          total_time: realUser.total_time,
+          conversations: realUser.conversations,
+          vocab: realUser.vocab,
+          native_lang: realUser.native_lang,
+          learning_langs: realUser.learning_langs,
+          skill_level: realUser.skill_level,
+          cefr_level: realUser.cefr_level ?? "A1",
+        }),
+      })
+        .then(r => r.json())
+        .then(data => { if (data.stats) setUserStats(data.stats); });
+    });
+  
     // Fetch prompts via Gemini
     getUserByName(name).then((v) => {
       generateNewPrompts(v?.cefr_level as ("A1" | "A2" | "B1" | "B2" | "C1" | "C2"), v?.learning_langs[0] as string, 5).then((p) => {
@@ -378,9 +416,9 @@ function CallScreen() {
       }}>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL", value: userStats?.cefr_level ?? "...", color: "var(--accent-green)" },
-            { label: "SESSIONS", value: userStats?.total_interactions?.toString() ?? "...", color: "var(--text-secondary)" },
-            { label: "VOCAB", value: userStats?.most_used_words?.length?.toString() ?? "...", color: "var(--text-secondary)" },
+            { label: "LEVEL",     value: userStats?.cefr_level ?? "...",                          color: "var(--accent-green)" },
+            { label: "SESSIONS",  value: userStats?.total_interactions?.toString() ?? "...",       color: "var(--text-secondary)" },
+            { label: "VOCAB",     value: userStats?.vocab_size?.toString() ?? "...", color: "var(--text-secondary)" },
             { label: "THIS WEEK", value: userStats?.new_words_this_week?.length?.toString() ?? "...", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
@@ -391,9 +429,9 @@ function CallScreen() {
         </div>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL", value: partnerStats?.cefr_level ?? "...", color: "var(--accent-blue)" },
-            { label: "SESSIONS", value: partnerStats?.total_interactions?.toString() ?? "...", color: "var(--text-secondary)" },
-            { label: "VOCAB", value: partnerStats?.most_used_words?.length?.toString() ?? "...", color: "var(--text-secondary)" },
+            { label: "LEVEL",     value: partnerStats?.cefr_level ?? "...",                              color: "var(--accent-blue)" },
+            { label: "SESSIONS",  value: partnerStats?.total_interactions?.toString() ?? "...",           color: "var(--text-secondary)" },
+            { label: "VOCAB",     value: partnerStats?.vocab_size?.toString() ?? "...",     color: "var(--text-secondary)" },
             { label: "THIS WEEK", value: partnerStats?.new_words_this_week?.length?.toString() ?? "...", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
