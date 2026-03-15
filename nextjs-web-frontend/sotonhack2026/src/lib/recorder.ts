@@ -57,8 +57,8 @@ export async function startRecording(streamId: string): Promise<boolean> {
     globalStore.pages[streamId] = page;
 
     // Navigate to VDO.Ninja view URL for this stream
-    // &autoplay=1 is crucial, &clean hides all UI
-    const viewUrl = `https://vdo.ninja/?view=${streamId}&clean=1&autoplay=1`;
+    // &autoplay=1 is crucial, &clean hides all UI, &novideo saves bandwidth
+    const viewUrl = `https://vdo.ninja/?view=${streamId}&clean=1&autoplay=1&novideo=1`;
     console.log(`[Recorder] Opening page: ${viewUrl}`);
     await page.goto(viewUrl, { waitUntil: 'networkidle2', timeout: 30000 });
 
@@ -90,13 +90,17 @@ export async function startRecording(streamId: string): Promise<boolean> {
 
           function startMediaRecorder(mediaStream: MediaStream) {
             console.log('Got MediaStream, starting recorder');
+            
+            // Extract only audio tracks for audio-only recording
+            const audioStream = new MediaStream(mediaStream.getAudioTracks());
+            
             const chunks: Blob[] = [];
             // Try higher quality codec first, fallback to standard webm
-            const options = MediaRecorder.isTypeSupported('video/webm; codecs=vp9,opus') 
-               ? { mimeType: 'video/webm; codecs=vp9,opus' } 
-               : { mimeType: 'video/webm' };
+            const options = MediaRecorder.isTypeSupported('audio/webm; codecs=opus') 
+               ? { mimeType: 'audio/webm; codecs=opus' } 
+               : { mimeType: 'audio/webm' };
                
-            const recorder = new MediaRecorder(mediaStream, options);
+            const recorder = new MediaRecorder(audioStream, options);
             
             // Attach recorder to window so we can access it later to stop it
             (window as any)._mediaRecorder = recorder;
@@ -110,7 +114,7 @@ export async function startRecording(streamId: string): Promise<boolean> {
 
             // When recording stops, we convert the blob to base64 so Puppeteer can extract it
             recorder.onstop = () => {
-              const blob = new Blob(chunks, { type: 'video/webm' });
+              const blob = new Blob(chunks, { type: 'audio/webm' });
               const reader = new FileReader();
               reader.readAsDataURL(blob);
               reader.onloadend = () => {
