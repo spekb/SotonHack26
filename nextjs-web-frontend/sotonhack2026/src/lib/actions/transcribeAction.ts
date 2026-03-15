@@ -34,7 +34,7 @@ export async function transcribeAudioForm(prevState: any, formData: FormData) {
   }
 }
 
-export async function transcribeAudioBlob(audioBlob : Blob) {
+export async function transcribeAudioBlob(audioBlob : Blob, language:string) {
   if (!["audio/wav", "audio/mp3", "audio/mpeg", "audio/ogg", "audio/webm"].includes(audioBlob.type)) {
         return { error: "The blob provided does not contain audio data", apiresponse: null};
     }
@@ -52,6 +52,7 @@ export async function transcribeAudioBlob(audioBlob : Blob) {
     const response = await client.speechToText.convert({
       file: audioBlob,
       modelId: "scribe_v2", // Using the recommended model
+      languageCode: language
     });
 
     return { error: null, apiresponse: response };

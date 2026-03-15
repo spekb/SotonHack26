@@ -45,9 +45,28 @@ export async function finaliseConversation(recording1: Blob, recording2: Blob, p
         return Promise.reject(new Error("Blob did not contain audio data"));
     }
 
-    let transcribeResult1 = await transcribeAudioBlob(recording1);
+    let user1 = (await getUserById(participants[0].id));
+
+    let lang = "";
+    if (user1 != null) { 
+      switch (user1.learning_langs[0]) {
+        case "English"  : lang = "en"; break;
+        case "German"   : lang = "de"; break;
+        case "French"   : lang = "fr"; break;
+        case "Spanish"  : lang = "es"; break;
+        case "Italian"  : lang = "it"; break;
+        case "Portugese": lang = "pt"; break;
+        case "Japanese" : lang = "jp"; break;
+        case "Korean"   : lang = "ko"; break;
+        case "Mandarin" : lang = "zh"; break;
+        case "Arabic"   : lang = "ar"; break;
+        case "Dutch"    : lang = "nl"; break;
+      }
+    }
+
+    let transcribeResult1 = await transcribeAudioBlob(recording1, lang);
     if (transcribeResult1.error) { return Promise.reject(new Error("Transcription Error")); }
-    let transcribeResult2 = await transcribeAudioBlob(recording2);
+    let transcribeResult2 = await transcribeAudioBlob(recording2, lang);
     if (transcribeResult2.error) { return Promise.reject(new Error("Transcription Error")); }
 
     let transcribeResult1Response = transcribeResult1.apiresponse;

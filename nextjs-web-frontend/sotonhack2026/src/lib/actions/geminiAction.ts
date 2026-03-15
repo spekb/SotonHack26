@@ -32,7 +32,7 @@ async function generateText(systemPrompt: string, userPrompt: string) {
       const genAI = new GoogleGenerativeAI(apiKey);
 
       const modelOptions: any = {
-        model: "gemma-3-1b-it" //"gemini-2.5-flash" "gemma-3-1b-it"
+        model: "gemini-3.1-flash-lite-preview" //"gemini-2.5-flash" "gemma-3-1b-it"
       };
 
       let finalUserPrompt = userPrompt;
