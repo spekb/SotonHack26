@@ -61,25 +61,27 @@ export async function getUserById(id: string): Promise<User | null> {
         await connectDB();
         const user = await UserModel.findOne({ id }).lean();
         if (!user) return null;
-        
+
+        const plain = JSON.parse(JSON.stringify(user));
+
         return {
-            id: user.id,
-            name: user.name,
-            total_time: user.total_time as number,
-            conversations: (user.conversations as any[]).map(conv => ({
+            id: plain.id,
+            name: plain.name,
+            total_time: plain.total_time as number,
+            conversations: (plain.conversations as any[]).map(conv => ({
                 id: conv.id,
                 vocab: conv.vocab,
                 new_vocab: conv.new_vocab,
                 participants: conv.participants,
                 topics: conv.topics,
-                datestamp: conv.datestamp,   // changed
+                datestamp: conv.datestamp,
                 length: conv.length
             })),
-            vocab: user.vocab as string[],
-            native_lang: user.native_lang,
-            learning_langs: user.learning_langs as string[],
-            skill_level: user.skill_level as number,
-            cefr_level: user.cefr_level as string ?? "A1",  // NEW
+            vocab: plain.vocab as string[],
+            native_lang: plain.native_lang,
+            learning_langs: plain.learning_langs as string[],
+            skill_level: plain.skill_level as number,
+            cefr_level: plain.cefr_level as string ?? "A1",
         };
     } catch (error) {
         console.error("Error fetching user by ID:", error);
@@ -93,11 +95,14 @@ export async function getUserByName(name: string): Promise<User | null> {
         const user = await UserModel.findOne({ name }).lean();
         if (!user) return null;
 
+        // Serialize to strip _id and other Mongoose internals
+        const plain = JSON.parse(JSON.stringify(user));
+
         return {
-            id: (user as any).id,
-            name: (user as any).name,
-            total_time: (user as any).total_time as number,
-            conversations: ((user as any).conversations as any[]).map(conv => ({
+            id: plain.id,
+            name: plain.name,
+            total_time: plain.total_time as number,
+            conversations: (plain.conversations as any[]).map(conv => ({
                 id: conv.id,
                 vocab: conv.vocab,
                 new_vocab: conv.new_vocab,
@@ -106,11 +111,11 @@ export async function getUserByName(name: string): Promise<User | null> {
                 datestamp: conv.datestamp,
                 length: conv.length
             })),
-            vocab: (user as any).vocab as string[],
-            native_lang: (user as any).native_lang,
-            learning_langs: (user as any).learning_langs as string[],
-            skill_level: (user as any).skill_level as number,
-            cefr_level: (user as any).cefr_level as string ?? "A1",
+            vocab: plain.vocab as string[],
+            native_lang: plain.native_lang,
+            learning_langs: plain.learning_langs as string[],
+            skill_level: plain.skill_level as number,
+            cefr_level: plain.cefr_level as string ?? "A1",
         };
     } catch (error) {
         console.error("Error fetching user by name:", error);

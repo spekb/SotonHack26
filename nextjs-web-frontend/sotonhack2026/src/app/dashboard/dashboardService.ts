@@ -21,7 +21,7 @@ export type DashboardResponse = {
 };
 
 export async function fetchDashboardStats(user: object): Promise<DashboardResponse> {
-  const res = await fetch("http://localhost:8000/api/process-conversation", {
+  const res = await fetch("http://localhost:8000/api/get-stats", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(user),

@@ -58,3 +58,28 @@ async def process_conversation(user: User):
     )
 
     return {"stats": stats}
+
+@app.post("/api/get-stats")
+async def get_stats(user: User):
+    if not user.conversations:
+        return {
+            "stats": {
+                "new_words_this_week": [],
+                "most_used_words": [],
+                "total_interactions": 0,
+                "total_convo_time_seconds": 0,
+                "activity_heatmap": {},
+                "popular_topics": [],
+                "avg_words_per_session": 0,
+                "new_words_per_minute": 0,
+                "weekly_conversation_counts": [0,0,0,0,0,0,0,0],
+                "skill_level": user.skill_level,
+                "cefr_level": duolingo_to_cefr(user.skill_level) if user.skill_level > 0 else user.cefr_level,
+                "cefr_index": duolingo_to_cefr_index(user.skill_level) if user.skill_level > 0 else CEFR_TO_INDEX.get(user.cefr_level, 0),
+                "learning_lang": user.learning_langs[0] if user.learning_langs else "Unknown",
+                "vocab_size": len(user.vocab),
+            }
+        }
+
+    stats = calculate_stats(user)
+    return {"stats": stats}
