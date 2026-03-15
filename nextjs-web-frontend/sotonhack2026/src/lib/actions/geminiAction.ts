@@ -63,7 +63,7 @@ async function generateText(systemPrompt: string, userPrompt: string) {
         system: systemPrompt,
         prompt: userPrompt,
         think: false,
-        keep_alive: "3m"
+        keep_alive: "3m",
       });
 
       return { error: null, text: response.response }
