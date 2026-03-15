@@ -91,6 +91,19 @@ function CallScreen() {
         if (data.participants < 2) {
           clearInterval(interval);
           const userId = sessionStorage.getItem("ll_user_name") ?? "anon";
+          
+          // Stop recording for self when partner leaves
+          const streamIdToStop = callRole === "first" ? `${id}_1` : `${id}_2`;
+          try {
+            await fetch(`/api/call/${id}/record`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "stop", streamId: streamIdToStop })
+            });
+          } catch (e) {
+            console.error("Failed to stop recording on partner leave:", e);
+          }
+
           await leaveQueue(userId);
           router.push("/waiting");
         }
@@ -107,6 +120,17 @@ function CallScreen() {
     const userId = sessionStorage.getItem("call_user_id") ?? "anon";
     const matchUserId = sessionStorage.getItem("ll_user_name") ?? "anon";
     if (callId) {
+      const streamIdToStop = callRole === "first" ? `${callId}_1` : `${callId}_2`;
+      try {
+        await fetch(`/api/call/${callId}/record`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "stop", streamId: streamIdToStop })
+        });
+      } catch (e) {
+        console.error("Failed to stop recording:", e);
+      }
+
       await fetch(`/api/call/${callId}/leave`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -121,6 +145,17 @@ function CallScreen() {
     const userId = sessionStorage.getItem("call_user_id") ?? "anon";
     const matchUserId = sessionStorage.getItem("ll_user_name") ?? "anon";
     if (callId) {
+      const streamIdToStop = callRole === "first" ? `${callId}_1` : `${callId}_2`;
+      try {
+        await fetch(`/api/call/${callId}/record`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "stop", streamId: streamIdToStop })
+        });
+      } catch (e) {
+        console.error("Failed to stop recording on skip:", e);
+      }
+
       await fetch(`/api/call/${callId}/leave`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -331,21 +366,6 @@ function CallScreen() {
           }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          onClick={() => {
-            const currentCallId = searchParams.get("id");
-            if (currentCallId) {
-              const streamIdToStop = callRole === "first" ? `${currentCallId}_1` : `${currentCallId}_2`;
-              fetch(`/api/call/${currentCallId}/record`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "stop", streamId: streamIdToStop })
-              }).finally(() => {
-                router.push("/dashboard");
-              });
-            } else {
-              router.push("/dashboard");
-            }
-          }}
         >End call</button>
         <button style={{
           background: "var(--accent-blue)", border: "none",
