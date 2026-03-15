@@ -85,11 +85,11 @@ export default function WaitingPage() {
   const { learningLang, skillLevel } = (() => {
     if (typeof window === "undefined") return { learningLang: "—", skillLevel: 0 };
     return {
-      learningLang: sessionStorage.getItem("ll_learn_lang")    ?? "—",
-      skillLevel:   Number(sessionStorage.getItem("ll_skill_level") ?? 0),
+      learningLang: sessionStorage.getItem("ll_learning_lang") ?? "—",   // fixed
+      skillLevel:   Number(sessionStorage.getItem("ll_duo_score") ?? 0), // fixed
     };
   })();
-
+  
   return (
     <div style={{
       minHeight: "100vh", background: "var(--bg-primary)",

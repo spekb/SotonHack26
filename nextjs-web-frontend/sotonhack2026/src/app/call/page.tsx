@@ -37,12 +37,123 @@ function CallScreen() {
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [userInitial, setUserInitial] = useState("?");
+  const [userStats, setUserStats] = useState<{
+    cefr_level: string;
+    total_interactions: number;
+    most_used_words: [string, number][];
+    new_words_this_week: string[];
+  } | null>(null);
+  const [partnerStats, setPartnerStats] = useState<{
+    cefr_level: string;
+    total_interactions: number;
+    most_used_words: [string, number][];
+    new_words_this_week: string[];
+  } | null>(null);
+    const [prompts, setPrompts] = useState<string[]>(PROMPTS);
 
   useEffect(() => {
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
-    setUserInitial(sessionStorage.getItem("ll_user_name")?.[0]?.toUpperCase() ?? "?");
+    const name = sessionStorage.getItem("ll_user_name") ?? "?";
+    setUserInitial(name[0]?.toUpperCase() ?? "?");
+  
+    // Fetch user stats
+    const user = {
+      id: "1",
+      name,
+      total_time: 0,
+      conversations: [],
+      vocab: [],
+      native_lang: sessionStorage.getItem("ll_native_lang") || "English",
+      learning_langs: [sessionStorage.getItem("ll_learning_lang") || ""],
+      skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
+      cefr_level: sessionStorage.getItem("ll_cefr") || "A1",
+    };
+  
+    fetch("http://localhost:8000/api/process-conversation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(user),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.stats) setUserStats(data.stats);
+      });
+  
+    // Fetch Gemini conversation prompt
+    const nativeLang = sessionStorage.getItem("ll_native_lang") || "English";
+    const learningLang = sessionStorage.getItem("ll_learning_lang") || "English";
+    const cefr = sessionStorage.getItem("ll_cefr") || "A1";
+  
+    fetch(`http://localhost:8000/api/conversation-prompt?target_language=${learningLang}&native_language=${nativeLang}&difficulty=${cefr}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.topic) {
+          setPrompts([
+            data.topic,
+            ...(data.suggested_vocab?.map((v: {0: string, 1: string}) => `Practice: "${v[0]}" (${v[1]})`) ?? []),
+            ...PROMPTS.slice(0, 3),
+          ]);
+        }
+      });
+  
     return () => clearInterval(t);
   }, []);
+
+  // useEffect(() => {
+  //   const callId = searchParams.get("id");
+  //   if (!callId) {
+  //     const newId = Math.random().toString(36).substring(2, 8);
+  //     const params = new URLSearchParams(searchParams.toString());
+  //     params.set("id", newId);
+  //     router.replace(`${pathname}?${params.toString()}`);
+  //   } else {
+  //     let userId = sessionStorage.getItem("call_user_id");
+  //     if (!userId) {
+  //       userId = Math.random().toString(36).substring(2, 10);
+  //       sessionStorage.setItem("call_user_id", userId);
+  //     }
+  //     fetch(`/api/call/${callId}/join`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ userId })
+  //     })
+  //       .then(res => res.json())
+  //       .then(data => {
+  //         if (data.status === "full") setCallRole("full");
+  //         else if (data.role === "first") setCallRole("first");
+  //         else if (data.role === "second") setCallRole("second");
+        
+  //         const userId = sessionStorage.getItem("call_user_id") ?? "";
+  //         return fetch(`/api/call/${callId}/partner`, {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({ userId })
+  //         });
+  //       })
+  //       .then(r => r?.json())
+  //       .then(data => {
+  //         if (data?.partner) {
+  //           fetch("http://localhost:8000/api/process-conversation", {
+  //             method: "POST",
+  //             headers: { "Content-Type": "application/json" },
+  //             body: JSON.stringify({
+  //               id: data.partner.id,
+  //               name: data.partner.name,
+  //               total_time: data.partner.total_time,
+  //               conversations: data.partner.conversations,
+  //               vocab: data.partner.vocab,
+  //               native_lang: data.partner.native_lang,
+  //               learning_langs: data.partner.learning_langs,
+  //               skill_level: data.partner.skill_level,
+  //               cefr_level: data.partner.cefr_level ?? "A1",
+  //             }),
+  //           })
+  //             .then(r => r.json())
+  //             .then(d => { if (d.stats) setPartnerStats(d.stats); });
+  //         }
+  //       });
+  //   }
+  // }, [searchParams, pathname, router]);
 
   useEffect(() => {
     const callId = searchParams.get("id");
@@ -52,11 +163,14 @@ function CallScreen() {
       params.set("id", newId);
       router.replace(`${pathname}?${params.toString()}`);
     } else {
-      let userId = sessionStorage.getItem("call_user_id");
+      let userId = sessionStorage.getItem("ll_user_id") ?? sessionStorage.getItem("ll_user_name") ?? "";
+      console.log("My userId:", userId);
       if (!userId) {
         userId = Math.random().toString(36).substring(2, 10);
-        sessionStorage.setItem("call_user_id", userId);
       }
+      sessionStorage.setItem("call_user_id", userId);
+  
+      // Join the call
       fetch(`/api/call/${callId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -68,6 +182,42 @@ function CallScreen() {
           else if (data.role === "first") setCallRole("first");
           else if (data.role === "second") setCallRole("second");
         });
+  
+      // Poll for partner every 3 seconds until found
+      const partnerPoll = setInterval(() => {
+        const uid = sessionStorage.getItem("call_user_id") ?? "";
+        fetch(`/api/call/${callId}/partner`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: uid })
+        })
+          .then(r => r.json())
+          .then(partnerData => {
+            if (partnerData?.partner) {
+              console.log("Partner data:", partnerData.partner);
+              clearInterval(partnerPoll);
+              fetch("http://localhost:8000/api/process-conversation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  id: partnerData.partner.id,
+                  name: partnerData.partner.name,
+                  total_time: partnerData.partner.total_time,
+                  conversations: partnerData.partner.conversations,
+                  vocab: partnerData.partner.vocab,
+                  native_lang: partnerData.partner.native_lang,
+                  learning_langs: partnerData.partner.learning_langs,
+                  skill_level: partnerData.partner.skill_level,
+                  cefr_level: partnerData.partner.cefr_level ?? "A1",
+                }),
+              })
+                .then(r => r.json())
+                .then(d => { if (d.stats) setPartnerStats(d.stats); });
+            }
+          });
+      }, 3000);
+  
+      return () => clearInterval(partnerPoll);
     }
   }, [searchParams, pathname, router]);
 
@@ -187,12 +337,12 @@ function CallScreen() {
         background: "var(--bg-secondary)", borderTop: "0.5px solid var(--border-subtle)",
         borderBottom: "0.5px solid var(--border-subtle)",
       }}>
-        <div style={{ display: "flex", gap: 22, padding: "10px 20px", borderRight: "0.5px solid var(--border-subtle)", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL", value: "A2", color: "var(--accent-blue)" },
-            { label: "SESSIONS", value: "38", color: "var(--text-secondary)" },
-            { label: "RATING", value: "4.8", color: "var(--accent-orange)" },
-            { label: "MATCH", value: "94%", color: "var(--accent-purple)" },
+            { label: "LEVEL",     value: userStats?.cefr_level ?? "...",                          color: "var(--accent-green)" },
+            { label: "SESSIONS",  value: userStats?.total_interactions?.toString() ?? "...",       color: "var(--text-secondary)" },
+            { label: "VOCAB",     value: userStats?.most_used_words?.length?.toString() ?? "...", color: "var(--text-secondary)" },
+            { label: "THIS WEEK", value: userStats?.new_words_this_week?.length?.toString() ?? "...", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
@@ -202,10 +352,10 @@ function CallScreen() {
         </div>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL", value: "B2", color: "var(--accent-green)" },
-            { label: "SESSIONS", value: "142", color: "var(--text-secondary)" },
-            { label: "VOCAB", value: "2,340", color: "var(--text-secondary)" },
-            { label: "USED TODAY", value: "47", color: "var(--accent-orange)" },
+            { label: "LEVEL",     value: partnerStats?.cefr_level ?? "...",                              color: "var(--accent-blue)" },
+            { label: "SESSIONS",  value: partnerStats?.total_interactions?.toString() ?? "...",           color: "var(--text-secondary)" },
+            { label: "VOCAB",     value: partnerStats?.most_used_words?.length?.toString() ?? "...",     color: "var(--text-secondary)" },
+            { label: "THIS WEEK", value: partnerStats?.new_words_this_week?.length?.toString() ?? "...", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
               <p style={{ fontSize: 10, color: "var(--text-faint)", fontWeight: 600, marginBottom: 2 }}>{s.label}</p>
