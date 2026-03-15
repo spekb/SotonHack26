@@ -433,13 +433,16 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
 
     // Save to sessionStorage FIRST — before any async calls that might fail
     sessionStorage.setItem("ll_native_lang", native);
-    sessionStorage.setItem("ll_learn_lang", learn);
+    sessionStorage.setItem("ll_learning_lang", learn);
     sessionStorage.setItem("ll_skill_level", String(skillIndex));
     sessionStorage.setItem("ll_cefr", cefr);
-    sessionStorage.setItem("ll_duo_score", duoScore.toString());
+    sessionStorage.setItem("ll_duo_score", String(skillIndex));
 
     try {
-      await insertUserByDetails(userName, native, [learn], skillIndex, cefr);
+      const newUser = await insertUserByDetails(userName, native, [learn], skillIndex, cefr);
+      if (newUser) {
+        sessionStorage.setItem("ll_user_id", newUser.id);
+      }
       router.push("/dashboard");
     } catch (e) {
       console.error(e);

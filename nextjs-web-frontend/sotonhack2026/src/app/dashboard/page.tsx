@@ -4,7 +4,7 @@ import { fetchDashboardStats, DashboardStats } from "./dashboardService";
 import { getUserByName } from "@/lib/actions/dbActions";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 // const TOPICS = [
@@ -48,6 +48,7 @@ function buildHeatmap(activityHeatmap: Record<string, number>): string[] {
 }
 
 export default function Dashboard() {
+  const searchParams = useSearchParams();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const router = useRouter();
@@ -87,6 +88,8 @@ export default function Dashboard() {
   useEffect(() => {
     const storedName = sessionStorage.getItem("ll_user_name") || "";
     setUserInitial(storedName.charAt(0).toUpperCase() || "?");
+
+    const isRefresh = searchParams.get("refresh") === "true";
   
     // Fetch real user from MongoDB first
     getUserByName(storedName).then(realUser => {
@@ -115,7 +118,7 @@ export default function Dashboard() {
           setStatsLoading(false);
         });
     });
-  }, []);
+  }, [searchParams]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("ll_user_name");

@@ -248,6 +248,26 @@ function CallScreen() {
     const userId = sessionStorage.getItem("call_user_id") ?? "anon";
     const matchUserId = sessionStorage.getItem("ll_user_name") ?? "anon";
     const realUserId = sessionStorage.getItem("ll_user_id") ?? matchUserId;
+
+    const realUser = await getUserByName(matchUserId);
+    if (realUser && realUser.conversations.length > 0) {
+      await fetch("http://localhost:8000/api/process-conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: realUser.id,
+          name: realUser.name,
+          total_time: realUser.total_time,
+          conversations: realUser.conversations,
+          vocab: realUser.vocab,
+          native_lang: realUser.native_lang,
+          learning_langs: realUser.learning_langs,
+          skill_level: realUser.skill_level,
+          cefr_level: realUser.cefr_level ?? "A1",
+        }),
+      });
+    }
+
     if (callId) {
       const streamIdToStop = callRole === "first" ? `${callId}_1` : `${callId}_2`;
       try {
@@ -272,13 +292,33 @@ function CallScreen() {
       });
     }
     await leaveQueue(matchUserId);
-    router.push("/dashboard");
+    router.push("/dashboard?refresh=true");
   };
 
   const handleSkip = async () => {
     const userId = sessionStorage.getItem("call_user_id") ?? "anon";
     const matchUserId = sessionStorage.getItem("ll_user_name") ?? "anon";
     const realUserId = sessionStorage.getItem("ll_user_id") ?? matchUserId;
+
+    const realUser = await getUserByName(matchUserId);
+    if (realUser && realUser.conversations.length > 0) {
+      await fetch("http://localhost:8000/api/process-conversation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: realUser.id,
+          name: realUser.name,
+          total_time: realUser.total_time,
+          conversations: realUser.conversations,
+          vocab: realUser.vocab,
+          native_lang: realUser.native_lang,
+          learning_langs: realUser.learning_langs,
+          skill_level: realUser.skill_level,
+          cefr_level: realUser.cefr_level ?? "A1",
+        }),
+      });
+    }
+
     if (callId) {
       const streamIdToStop = callRole === "first" ? `${callId}_1` : `${callId}_2`;
       try {
