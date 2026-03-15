@@ -2,7 +2,7 @@
 import { generateTopicStrings } from "@/lib/actions/geminiAction";
 import { Conversation, User, getUserById } from "@/lib/actions/dbActions";
 import { transcribeAudioBlob } from "@/lib/actions/transcribeAction";
-import { insertConversation } from "@/lib/actions/dbActions";
+import { insertConversation, setVocab } from "@/lib/actions/dbActions";
 import type { SpeechToTextChunkResponseModel } from "@elevenlabs/elevenlabs-js/api";
 
 async function responseToConversation(response_text: string, end_length: number, participants: {"name": string, "id": string}[]) : Promise<Omit<Conversation, "id">|null> {
@@ -46,9 +46,9 @@ export async function finaliseConversation(recording1: Blob, recording2: Blob, p
     }
 
     let transcribeResult1 = await transcribeAudioBlob(recording1);
-    if (transcribeResult1.error) { Promise.reject(new Error("Transcription Error")); }
+    if (transcribeResult1.error) { return Promise.reject(new Error("Transcription Error")); }
     let transcribeResult2 = await transcribeAudioBlob(recording2);
-    if (transcribeResult2.error) { Promise.reject(new Error("Transcription Error")); }
+    if (transcribeResult2.error) { return Promise.reject(new Error("Transcription Error")); }
 
     let transcribeResult1Response = transcribeResult1.apiresponse;
     let transcribeResult2Response = transcribeResult2.apiresponse;
@@ -59,5 +59,11 @@ export async function finaliseConversation(recording1: Blob, recording2: Blob, p
     if (new_conversation == null) { return Promise.reject(new Error("Could not generate conversation")); }
 
     let pushed_convo = insertConversation(new_conversation);
-    if (pushed_convo === null) { Promise.reject(new Error("Could not insert conversation into database")); }
+    if (pushed_convo === null) { return Promise.reject(new Error("Could not insert conversation into database")); }
+
+    let this_convo_vocab = new Set<string>(new_conversation.vocab);
+    let participant1_vocab = new Set<string>((await getUserById(participants[0].id))?.vocab);
+    let participant2_vocab = new Set<string>((await getUserById(participants[1].id))?.vocab);
+    setVocab(participants[0].id, Array.from(this_convo_vocab.union(participant1_vocab)));
+    setVocab(participants[1].id, Array.from(this_convo_vocab.union(participant2_vocab)));
 }

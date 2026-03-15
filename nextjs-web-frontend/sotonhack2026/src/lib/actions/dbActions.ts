@@ -220,3 +220,14 @@ export async function insertConversation(data: Omit<Conversation, 'id'>): Promis
         return null;
     }
 }
+
+export async function setVocab(id: string, vocab: string[]): Promise<boolean> {
+    try {
+        await connectDB();
+        const result = await UserModel.updateOne({ id }, { $set: { vocab } });
+        return result.matchedCount > 0;
+    } catch (error) {
+        console.error("Error setting vocab for user:", error);
+        return false;
+    }
+}
