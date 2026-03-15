@@ -19,10 +19,10 @@ export default function WaitingPage() {
   const startRef = useRef<number>(Date.now());
 
   const getUserInfo = () => ({
-    userId:       sessionStorage.getItem("ll_user_id")       ?? sessionStorage.getItem("ll_user_name") ?? "anon",
-    userName:     sessionStorage.getItem("ll_user_name")     ?? "User",
-    learningLang: sessionStorage.getItem("ll_learn_lang")    ?? "Unknown",
-    skillLevel:   Number(sessionStorage.getItem("ll_skill_level") ?? "70"),
+    userId:       sessionStorage.getItem("ll_user_id") ?? sessionStorage.getItem("ll_user_name") ?? "anon",
+    userName:     sessionStorage.getItem("ll_user_name") ?? "User",
+    learningLang: sessionStorage.getItem("ll_learning_lang") ?? "Unknown",  // was ll_learn_lang
+    skillLevel:   Number(sessionStorage.getItem("ll_duo_score") ?? "0"),    // was ll_skill_level
   });
 
   const stopPolling = () => {
@@ -55,6 +55,7 @@ export default function WaitingPage() {
 
   useEffect(() => {
     const { userId, userName, learningLang, skillLevel } = getUserInfo();
+    console.log("Joining queue with:", { userId, userName, learningLang, skillLevel }); // ADD THIS
 
     // Surface to UI
     setLearningLang(learningLang);
@@ -90,6 +91,7 @@ export default function WaitingPage() {
     setElapsed(0);
     startRef.current = Date.now();
     const { userId, userName, learningLang, skillLevel } = getUserInfo();
+    console.log("Joining queue with:", { userId, userName, learningLang, skillLevel }); // ADD THIS
     joinQueue(userId, userName, learningLang, skillLevel).then(() => setStatus("waiting"));
 
     timerRef.current = setInterval(() => {
