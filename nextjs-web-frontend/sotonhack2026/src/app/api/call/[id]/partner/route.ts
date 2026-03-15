@@ -27,5 +27,20 @@ export async function POST(req: NextRequest, context: { params: Promise<{ callId
     if (!partnerId) return NextResponse.json({ partner: null });
 
     const partner = await getUserById(partnerId);
-    return NextResponse.json({ partner });
+    if (!partner) return NextResponse.json({ partner: null });
+    
+    // Strip out any non-serializable fields
+    const plainPartner = {
+      id: partner.id,
+      name: partner.name,
+      total_time: partner.total_time,
+      conversations: partner.conversations,
+      vocab: partner.vocab,
+      native_lang: partner.native_lang,
+      learning_langs: partner.learning_langs,
+      skill_level: partner.skill_level,
+      cefr_level: partner.cefr_level ?? "A1",
+    };
+    
+    return NextResponse.json({ partner: plainPartner });
 }

@@ -19,6 +19,7 @@ def calculate_stats(user: User):
         "cefr_level": duolingo_to_cefr(user.skill_level),        # e.g. "B2"
         "cefr_index": duolingo_to_cefr_index(user.skill_level),  # e.g. 3
         "learning_lang": user.learning_langs[0] if user.learning_langs else "Unknown",
+        "vocab_size": len(user.vocab),
     }
 
 def duolingo_to_cefr(skill_level: int) -> str:

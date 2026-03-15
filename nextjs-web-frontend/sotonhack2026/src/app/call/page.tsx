@@ -97,7 +97,7 @@ function CallScreen() {
                   native_lang: partnerData.partner.native_lang,
                   learning_langs: partnerData.partner.learning_langs,
                   skill_level: partnerData.partner.skill_level,
-                  cefr_level: partnerData.partner.cefr_level ?? "A1",
+                  cefr_level: "A1",
                 }),
               })
                 .then(r => r.json())

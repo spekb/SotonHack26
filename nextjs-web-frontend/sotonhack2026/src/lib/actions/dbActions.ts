@@ -94,23 +94,23 @@ export async function getUserByName(name: string): Promise<User | null> {
         if (!user) return null;
 
         return {
-            id: user.id,
-            name: user.name,
-            total_time: user.total_time as number,
-            conversations: (user.conversations as any[]).map(conv => ({
+            id: (user as any).id,
+            name: (user as any).name,
+            total_time: (user as any).total_time as number,
+            conversations: ((user as any).conversations as any[]).map(conv => ({
                 id: conv.id,
                 vocab: conv.vocab,
                 new_vocab: conv.new_vocab,
                 participants: conv.participants,
                 topics: conv.topics,
-                datestamp: conv.datestamp,   // changed
+                datestamp: conv.datestamp,
                 length: conv.length
             })),
-            vocab: user.vocab as string[],
-            native_lang: user.native_lang,
-            learning_langs: user.learning_langs as string[],
-            skill_level: user.skill_level as number,
-            cefr_level: user.cefr_level as string ?? "A1",  // NEW
+            vocab: (user as any).vocab as string[],
+            native_lang: (user as any).native_lang,
+            learning_langs: (user as any).learning_langs as string[],
+            skill_level: (user as any).skill_level as number,
+            cefr_level: (user as any).cefr_level as string ?? "A1",
         };
     } catch (error) {
         console.error("Error fetching user by name:", error);

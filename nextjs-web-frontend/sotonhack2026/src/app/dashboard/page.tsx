@@ -1,6 +1,7 @@
 "use client";
 // import DashboardShell from "./DashboardShell";
 import { fetchDashboardStats, DashboardStats } from "./dashboardService";
+import { getUserByName } from "@/lib/actions/dbActions";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -53,33 +54,66 @@ export default function Dashboard() {
   // const [heatmap, setHeatmap] = useState<string[][]>([]);
   const [userInitial, setUserInitial] = useState("?");
 
+  // useEffect(() => {
+  //   // setHeatmap(generateHeatmap());
+  //   const storedName = sessionStorage.getItem("ll_user_name") || "";
+  //   setUserInitial(storedName.charAt(0).toUpperCase() || "?");
+
+  //   // Fetch stats once on mount
+  //   const user = {
+  //     id: "1",
+  //     name: storedName,
+  //     total_time: 0,
+  //     conversations: [],
+  //     vocab: [],
+  //     native_lang: sessionStorage.getItem("ll_native_lang") || "English",
+  //     learning_langs: [sessionStorage.getItem("ll_learning_lang") || ""],
+  //     skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
+  //     cefr_level: sessionStorage.getItem("ll_cefr") || "A1",
+  //   };
+
+  //   fetchDashboardStats(user)
+  //   .then(data => {
+  //     console.log("stats response:", data);
+  //     setStats(data.stats);
+  //     setStatsLoading(false);
+  //   })
+  //   .catch((err) => {
+  //     console.error("stats fetch failed:", err);
+  //     setStatsLoading(false);
+  //   });
+  // }, []);
+
   useEffect(() => {
-    // setHeatmap(generateHeatmap());
     const storedName = sessionStorage.getItem("ll_user_name") || "";
     setUserInitial(storedName.charAt(0).toUpperCase() || "?");
-
-    // Fetch stats once on mount
-    const user = {
-      id: "1",
-      name: storedName,
-      total_time: 0,
-      conversations: [],
-      vocab: [],
-      native_lang: sessionStorage.getItem("ll_native_lang") || "English",
-      learning_langs: [sessionStorage.getItem("ll_learn_lang") || ""],
-      skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
-      cefr_level: sessionStorage.getItem("ll_cefr") || "A1",
-    };
-
-    fetchDashboardStats(user)
-    .then(data => {
-      console.log("stats response:", data);
-      setStats(data.stats);
-      setStatsLoading(false);
-    })
-    .catch((err) => {
-      console.error("stats fetch failed:", err);
-      setStatsLoading(false);
+  
+    // Fetch real user from MongoDB first
+    getUserByName(storedName).then(realUser => {
+      if (!realUser) { setStatsLoading(false); return; }
+  
+      const user = {
+        id: realUser.id,
+        name: realUser.name,
+        total_time: realUser.total_time,
+        conversations: realUser.conversations,
+        vocab: realUser.vocab,
+        native_lang: realUser.native_lang,
+        learning_langs: realUser.learning_langs,
+        skill_level: realUser.skill_level,
+        cefr_level: realUser.cefr_level ?? "A1",
+      };
+  
+      fetchDashboardStats(user)
+        .then(data => {
+          console.log("stats response:", data);
+          setStats(data.stats);
+          setStatsLoading(false);
+        })
+        .catch((err) => {
+          console.error("stats fetch failed:", err);
+          setStatsLoading(false);
+        });
     });
   }, []);
 
@@ -215,8 +249,8 @@ export default function Dashboard() {
             <div className="dash-grid-4" style={{ marginBottom: 14 }}>
               {[
                 { label: "SESSIONS",      value: stats.total_interactions.toString(),        sub: `+${stats.new_words_this_week.length} new words this week`, subColor: "var(--accent-green)" },
-                { label: "WORDS LEARNED", value: stats.most_used_words.length.toString(),    sub: `avg ${stats.avg_words_per_session.toFixed(1)} per session`,  subColor: "var(--accent-blue)" },
-                { label: "TOTAL TIME",    value: `${Math.round(stats.total_convo_time_seconds / 60)}m`, sub: `${stats.total_convo_time_seconds.toFixed(1)} words/turn avg`,    subColor: "var(--accent-orange)" },
+                { label: "WORDS LEARNED", value: `${stats.vocab_size}`,    sub: `avg ${stats.avg_words_per_session.toFixed(1)} per session`,  subColor: "var(--accent-blue)" },
+                { label: "TOTAL TIME",    value: `${Math.round(stats.total_convo_time_seconds / 60)}m`,    subColor: "var(--accent-orange)" },
                 { label: "NEW THIS WEEK", value: stats.new_words_this_week.length.toString(), sub: `${stats.new_words_per_minute.toFixed(1)} new words/min`,      subColor: "var(--accent-purple)" },
               ].map((s) => (
                 <div key={s.label} style={{

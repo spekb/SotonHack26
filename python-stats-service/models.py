@@ -12,7 +12,7 @@ class Conversation(BaseModel):
     participants: list[Participant]
     topics: list[str]
     datestamp: datetime
-    length: int
+    length: float
 
 class User(BaseModel):
     id: str

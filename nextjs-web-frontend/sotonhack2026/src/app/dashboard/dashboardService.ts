@@ -12,6 +12,7 @@ export type DashboardStats = {
   cefr_level: string;   // ← ADD THIS
   cefr_index: number;
   learning_lang: string;
+  vocab_size: number;
 };
 
 export type DashboardResponse = {
@@ -26,6 +27,10 @@ export async function fetchDashboardStats(user: object): Promise<DashboardRespon
     body: JSON.stringify(user),
   });
 
-  if (!res.ok) throw new Error("Failed to fetch stats");
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("Backend error:", res.status, errorText);
+    throw new Error("Failed to fetch stats");
+  }
   return res.json();
 }
