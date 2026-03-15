@@ -13,6 +13,7 @@ export default function WaitingPage() {
   const [dotCount, setDotCount] = useState(1);
   const [learningLang, setLearningLang] = useState("—");
   const [skillLevel, setSkillLevel] = useState(0);
+  const [tolerance, setTolerance] = useState(15);
   const pollRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef<number>(Date.now());
@@ -46,6 +47,8 @@ export default function WaitingPage() {
         setTimeout(() => {
           router.push(`/call?id=${data.sessionId}`);
         }, 800);
+      } else if (data.status === "waiting" && data.currentTolerance !== undefined) {
+        setTolerance(data.currentTolerance);
       }
     }, POLL_INTERVAL_MS);
   };
@@ -185,7 +188,7 @@ export default function WaitingPage() {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Tolerance</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>±15 points</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>±{tolerance} points</span>
                 </div>
               </div>
             </div>
