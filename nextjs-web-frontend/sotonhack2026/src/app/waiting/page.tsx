@@ -52,6 +52,7 @@ export default function WaitingPage() {
 
   useEffect(() => {
     const { userId, userName, learningLang, skillLevel } = getUserInfo();
+    console.log("Joining queue with:", { userId, userName, learningLang, skillLevel }); // ADD THIS
 
     // Surface to UI
     setLearningLang(learningLang);
@@ -87,6 +88,7 @@ export default function WaitingPage() {
     setElapsed(0);
     startRef.current = Date.now();
     const { userId, userName, learningLang, skillLevel } = getUserInfo();
+    console.log("Joining queue with:", { userId, userName, learningLang, skillLevel }); // ADD THIS
     joinQueue(userId, userName, learningLang, skillLevel).then(() => setStatus("waiting"));
 
     timerRef.current = setInterval(() => {

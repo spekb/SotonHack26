@@ -1,10 +1,11 @@
 "use server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import ollama from "ollama"
+// import ollama from "ollama"
 
 
-const USE_OLLAMA = true;
+// const USE_OLLAMA = true;
+const USE_OLLAMA = false;
 
 
 function stripCodeBlock(text: string): string {
