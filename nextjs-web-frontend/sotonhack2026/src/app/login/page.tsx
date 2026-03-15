@@ -41,7 +41,8 @@ export default function LoginPage() {
       } else {
         sessionStorage.setItem("ll_user_name", displayName);
         sessionStorage.setItem("ll_native_lang", user.native_lang ?? "English");
-        sessionStorage.setItem("ll_learning_lang", user.learning_langs?.[0] ?? "");
+        sessionStorage.setItem("ll_learn_lang", user.learning_langs?.[0] ?? "");
+        sessionStorage.setItem("ll_skill_level", user.skill_level?.toString() ?? "");
         sessionStorage.setItem("ll_duo_score", user.skill_level?.toString() ?? "0");
         sessionStorage.setItem("ll_cefr", user.cefr_level ?? "A1");
         router.push("/dashboard");
