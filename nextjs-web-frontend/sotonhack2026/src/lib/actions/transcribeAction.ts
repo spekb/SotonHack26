@@ -52,7 +52,8 @@ export async function transcribeAudioBlob(audioBlob : Blob, language:string) {
     const response = await client.speechToText.convert({
       file: audioBlob,
       modelId: "scribe_v2", // Using the recommended model
-      languageCode: language
+      languageCode: language,
+      noVerbatim: true
     });
 
     return { error: null, apiresponse: response };
