@@ -61,7 +61,7 @@ function CallScreen() {
         userId = Math.random().toString(36).substring(2, 10);
       }
       sessionStorage.setItem("call_user_id", userId);
-  
+
       fetch(`/api/call/${callId}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,7 +86,7 @@ function CallScreen() {
             }).catch(e => console.error("Failed to start recording:", e));
           }
         });
-  
+
       const partnerPoll = setInterval(() => {
         const uid = sessionStorage.getItem("call_user_id") ?? "";
         fetch(`/api/call/${callId}/partner`, {
@@ -118,7 +118,7 @@ function CallScreen() {
             }
           });
       }, 3000);
-  
+
       return () => clearInterval(partnerPoll);
     }
   }, [searchParams, pathname, router]);
@@ -128,7 +128,7 @@ function CallScreen() {
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
     const name = sessionStorage.getItem("ll_user_name") ?? "?";
     setUserInitial(name[0]?.toUpperCase() ?? "?");
-  
+
     // Fetch user stats
     const user = {
       id: sessionStorage.getItem("ll_user_id") ?? "1",
@@ -141,7 +141,7 @@ function CallScreen() {
       skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
       cefr_level: sessionStorage.getItem("ll_cefr") || "A1",
     };
-  
+
     fetch("http://localhost:8000/api/process-conversation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -149,14 +149,14 @@ function CallScreen() {
     })
       .then(r => r.json())
       .then(data => { if (data.stats) setUserStats(data.stats); });
-  
+
     // Fetch prompts via Gemini
     getUserByName(name).then((v) => {
-      generateNewPrompts(v?.cefr_level as ("A1"|"A2"|"B1"|"B2"|"C1"|"C2"), v?.learning_langs[0] as string, 5).then((p) => {
+      generateNewPrompts(v?.cefr_level as ("A1" | "A2" | "B1" | "B2" | "C1" | "C2"), v?.learning_langs[0] as string, 5).then((p) => {
         if (p.error == null) setPrompts(p.prompts);
       });
     });
-  
+
     return () => clearInterval(t);
   }, []);
 
@@ -176,18 +176,18 @@ function CallScreen() {
         if (data.participants < 2) {
           clearInterval(interval);
           const userId = sessionStorage.getItem("ll_user_name") ?? "anon";
-          
+
           // Stop recording for self when partner leaves
           const streamIdToStop = callRole === "first" ? `${id}_1` : `${id}_2`;
           try {
             await fetch(`/api/call/${id}/record`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ 
-                action: "stop", 
-                streamId: streamIdToStop, 
+              body: JSON.stringify({
+                action: "stop",
+                streamId: streamIdToStop,
                 realUserId: sessionStorage.getItem("ll_user_id") ?? sessionStorage.getItem("ll_user_name") ?? "anon",
-                realUserName: sessionStorage.getItem("ll_user_name") ?? "User" 
+                realUserName: sessionStorage.getItem("ll_user_name") ?? "User"
               })
             });
           } catch (e) {
@@ -216,11 +216,11 @@ function CallScreen() {
         await fetch(`/api/call/${callId}/record`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            action: "stop", 
-            streamId: streamIdToStop, 
+          body: JSON.stringify({
+            action: "stop",
+            streamId: streamIdToStop,
             realUserId: realUserId,
-            realUserName: matchUserId 
+            realUserName: matchUserId
           })
         });
       } catch (e) {
@@ -247,11 +247,11 @@ function CallScreen() {
         await fetch(`/api/call/${callId}/record`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            action: "stop", 
-            streamId: streamIdToStop, 
+          body: JSON.stringify({
+            action: "stop",
+            streamId: streamIdToStop,
             realUserId: realUserId,
-            realUserName: matchUserId 
+            realUserName: matchUserId
           })
         });
       } catch (e) {
@@ -344,7 +344,7 @@ function CallScreen() {
             allow="camera; microphone; display-capture; autoplay"
           />
           {/* Transcription */}
-          <div style={{
+          {/* <div style={{
             position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 1, pointerEvents: "none",
             background: "rgba(0,0,0,0.65)", padding: "10px 16px",
             borderTop: "0.5px solid var(--border-subtle)",
@@ -353,7 +353,7 @@ function CallScreen() {
             <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.45 }}>
               "Eu aprendo alemão há dois anos..."
             </p>
-          </div>
+          </div> */}
         </div>
 
         {/* Self */}
@@ -378,9 +378,9 @@ function CallScreen() {
       }}>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL",     value: userStats?.cefr_level ?? "...",                          color: "var(--accent-green)" },
-            { label: "SESSIONS",  value: userStats?.total_interactions?.toString() ?? "...",       color: "var(--text-secondary)" },
-            { label: "VOCAB",     value: userStats?.most_used_words?.length?.toString() ?? "...", color: "var(--text-secondary)" },
+            { label: "LEVEL", value: userStats?.cefr_level ?? "...", color: "var(--accent-green)" },
+            { label: "SESSIONS", value: userStats?.total_interactions?.toString() ?? "...", color: "var(--text-secondary)" },
+            { label: "VOCAB", value: userStats?.most_used_words?.length?.toString() ?? "...", color: "var(--text-secondary)" },
             { label: "THIS WEEK", value: userStats?.new_words_this_week?.length?.toString() ?? "...", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
@@ -391,9 +391,9 @@ function CallScreen() {
         </div>
         <div style={{ display: "flex", gap: 22, padding: "10px 20px", alignItems: "center" }}>
           {[
-            { label: "LEVEL",     value: partnerStats?.cefr_level ?? "...",                              color: "var(--accent-blue)" },
-            { label: "SESSIONS",  value: partnerStats?.total_interactions?.toString() ?? "...",           color: "var(--text-secondary)" },
-            { label: "VOCAB",     value: partnerStats?.most_used_words?.length?.toString() ?? "...",     color: "var(--text-secondary)" },
+            { label: "LEVEL", value: partnerStats?.cefr_level ?? "...", color: "var(--accent-blue)" },
+            { label: "SESSIONS", value: partnerStats?.total_interactions?.toString() ?? "...", color: "var(--text-secondary)" },
+            { label: "VOCAB", value: partnerStats?.most_used_words?.length?.toString() ?? "...", color: "var(--text-secondary)" },
             { label: "THIS WEEK", value: partnerStats?.new_words_this_week?.length?.toString() ?? "...", color: "var(--accent-orange)" },
           ].map((s) => (
             <div key={s.label}>
@@ -469,12 +469,14 @@ function CallScreen() {
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >End call</button>
-        <button style={{
-          background: "var(--accent-blue)", border: "none",
-          color: "#fff", borderRadius: 8, padding: "10px 26px",
-          fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
-          letterSpacing: "0.01em", transition: "opacity 0.15s",
-        }}
+        <button
+          onClick={handleSkip}
+          style={{
+            background: "var(--accent-blue)", border: "none",
+            color: "#fff", borderRadius: 8, padding: "10px 26px",
+            fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 700,
+            letterSpacing: "0.01em", transition: "opacity 0.15s",
+          }}
           onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
           onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
         >Skip / Next →</button>

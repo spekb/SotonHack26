@@ -1,11 +1,11 @@
 "use server";
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import ollama from "ollama"
+// import ollama from "ollama"
 
 
- const USE_OLLAMA = true;
-//const USE_OLLAMA = false;
+//  const USE_OLLAMA = true;
+const USE_OLLAMA = false;
 
 
 function stripCodeBlock(text: string): string {
@@ -35,13 +35,19 @@ async function generateText(systemPrompt: string, userPrompt: string) {
         model: "gemma-3-1b-it" //"gemini-2.5-flash" "gemma-3-1b-it"
       };
 
+      let finalUserPrompt = userPrompt;
+
       if (systemPrompt && systemPrompt.trim() !== "") {
-        modelOptions.systemInstruction = systemPrompt;
+        if (modelOptions.model.includes("gemini")) {
+          modelOptions.systemInstruction = systemPrompt;
+        } else {
+          finalUserPrompt = `${systemPrompt}\n\n${userPrompt}`;
+        }
       }
 
       const model = genAI.getGenerativeModel(modelOptions);
 
-      const result = await model.generateContent(userPrompt);
+      const result = await model.generateContent(finalUserPrompt);
 
       const responseText = result.response.text();
 
@@ -64,7 +70,7 @@ async function generateText(systemPrompt: string, userPrompt: string) {
 
     } catch (e: any) {
       console.error("Error connecting to Ollama:", e);
-      return { error: `An unexpected error ocurred ${e.message}`, text: ""}
+      return { error: `An unexpected error ocurred ${e.message}`, text: "" }
     }
   }
 
@@ -92,15 +98,15 @@ export async function generateNewPrompts(cefr_level: "A1" | "A2" | "B1" | "B2" |
   { \"prompts\":[\"prompt1\", \"prompt2\", ...]}. Do not wrap your response in a code block.`
 
   let text = await generateText("", systemPrompt);
-  if (text.error) { return { error: text.error, topics: []}; }
+  if (text.error) { return { error: text.error, topics: [] }; }
   else {
 
 
     try {
-      return { error: null, prompts: JSON.parse(stripCodeBlock(text.text)).prompts as string[]}
+      return { error: null, prompts: JSON.parse(stripCodeBlock(text.text)).prompts as string[] }
     } catch {
       console.error(text.text);
-      return { error: null, prompts: []}
+      return { error: null, prompts: [] }
     }
   }
 }
