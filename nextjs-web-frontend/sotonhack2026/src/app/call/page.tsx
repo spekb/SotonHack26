@@ -98,7 +98,12 @@ function CallScreen() {
             await fetch(`/api/call/${id}/record`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "stop", streamId: streamIdToStop })
+              body: JSON.stringify({ 
+                action: "stop", 
+                streamId: streamIdToStop, 
+                realUserId: sessionStorage.getItem("ll_user_id") ?? sessionStorage.getItem("ll_user_name") ?? "anon",
+                realUserName: sessionStorage.getItem("ll_user_name") ?? "User" 
+              })
             });
           } catch (e) {
             console.error("Failed to stop recording on partner leave:", e);
@@ -119,13 +124,19 @@ function CallScreen() {
   const handleEndCall = async () => {
     const userId = sessionStorage.getItem("call_user_id") ?? "anon";
     const matchUserId = sessionStorage.getItem("ll_user_name") ?? "anon";
+    const realUserId = sessionStorage.getItem("ll_user_id") ?? matchUserId;
     if (callId) {
       const streamIdToStop = callRole === "first" ? `${callId}_1` : `${callId}_2`;
       try {
         await fetch(`/api/call/${callId}/record`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "stop", streamId: streamIdToStop })
+          body: JSON.stringify({ 
+            action: "stop", 
+            streamId: streamIdToStop, 
+            realUserId: realUserId,
+            realUserName: matchUserId 
+          })
         });
       } catch (e) {
         console.error("Failed to stop recording:", e);
@@ -144,13 +155,19 @@ function CallScreen() {
   const handleSkip = async () => {
     const userId = sessionStorage.getItem("call_user_id") ?? "anon";
     const matchUserId = sessionStorage.getItem("ll_user_name") ?? "anon";
+    const realUserId = sessionStorage.getItem("ll_user_id") ?? matchUserId;
     if (callId) {
       const streamIdToStop = callRole === "first" ? `${callId}_1` : `${callId}_2`;
       try {
         await fetch(`/api/call/${callId}/record`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "stop", streamId: streamIdToStop })
+          body: JSON.stringify({ 
+            action: "stop", 
+            streamId: streamIdToStop, 
+            realUserId: realUserId,
+            realUserName: matchUserId 
+          })
         });
       } catch (e) {
         console.error("Failed to stop recording on skip:", e);
