@@ -66,9 +66,9 @@ export default function Dashboard() {
       conversations: [],
       vocab: [],
       native_lang: sessionStorage.getItem("ll_native_lang") || "English",
-      learning_langs: [sessionStorage.getItem("ll_learning_lang") || ""],
+      learning_langs: [sessionStorage.getItem("ll_learn_lang") || ""],
       skill_level: Number(sessionStorage.getItem("ll_duo_score")) || 0,
-      cefr_level: sessionStorage.getItem("ll_cefr") || "A1",  // NEW
+      cefr_level: sessionStorage.getItem("ll_cefr") || "A1",
     };
 
     fetchDashboardStats(user)
