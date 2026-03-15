@@ -12,7 +12,8 @@ const WaitingRoomSchema = new mongoose.Schema({
   sessionId:    { type: String, default: null },
   matchedWith:  { type: String, default: null },
   joinedAt:     { type: Date,   default: Date.now },
-});
+  pollCount:    { type: Number, default: 0 },
+}, { strict: false });
 
 // Auto-remove entries that have been waiting more than 2 minutes
 WaitingRoomSchema.index({ joinedAt: 1 }, { expireAfterSeconds: 120 });
@@ -31,11 +32,12 @@ export type WaitingEntry = {
   sessionId:    string | null;
   matchedWith:  string | null;
   joinedAt:     Date;
+  pollCount?:   number;
 };
 
 export type MatchResult =
   | { status: 'matched';  sessionId: string; partnerId: string; partnerName: string }
-  | { status: 'waiting' }
+  | { status: 'waiting';  currentTolerance?: number }
   | { status: 'error';    message: string };
 
 const SKILL_TOLERANCE = 15;
@@ -59,6 +61,7 @@ export async function joinQueue(
         sessionId:   null,
         matchedWith: null,
         joinedAt:    new Date(),
+        pollCount:   0,
       },
       { upsert: true, returnDocument: 'after' },
     );
@@ -83,8 +86,12 @@ export async function leaveQueue(userId: string): Promise<void> {
 export async function findMatch(userId: string): Promise<MatchResult> {
   await connectDB();
   try {
-    // 1. Load our own entry
-    const me = await WaitingRoomModel.findOne({ userId }).lean() as WaitingEntry | null;
+    // 1. Load our own entry and increment pollCount
+    const me = await WaitingRoomModel.findOneAndUpdate(
+      { userId },
+      { $inc: { pollCount: 1 } },
+      { returnDocument: 'after' }
+    ).lean() as WaitingEntry | null;
     if (!me) return { status: 'waiting' };
 
     // 2. Already matched on a previous poll — just return the result
@@ -98,16 +105,20 @@ export async function findMatch(userId: string): Promise<MatchResult> {
     }
 
     // 3. Look for a compatible unmatched partner (longest-waiting first)
+    const pollCount = Math.max(0, (me.pollCount || 1) - 1);
+    const doublings = Math.floor(pollCount / 5);
+    const currentTolerance = SKILL_TOLERANCE * Math.pow(2, doublings);
+
     const partner = await WaitingRoomModel.findOne({
       userId:       { $ne: userId },
       learningLang: me.learningLang,
-      skillLevel:   { $gte: me.skillLevel - SKILL_TOLERANCE, $lte: me.skillLevel + SKILL_TOLERANCE },
+      skillLevel:   { $gte: me.skillLevel - currentTolerance, $lte: me.skillLevel + currentTolerance },
       sessionId:    null,
     })
       .sort({ joinedAt: 1 })
       .lean() as WaitingEntry | null;
 
-    if (!partner) return { status: 'waiting' };
+    if (!partner) return { status: 'waiting', currentTolerance };
 
     // 4. Generate a shared session ID and write it to both entries atomically
     const sessionId = new mongoose.Types.ObjectId().toString();
@@ -125,7 +136,7 @@ export async function findMatch(userId: string): Promise<MatchResult> {
       ),
     ]);
 
-    if (!myUpdate) return { status: 'waiting' };
+    if (!myUpdate) return { status: 'waiting', currentTolerance };
 
     return {
       status:      'matched',
