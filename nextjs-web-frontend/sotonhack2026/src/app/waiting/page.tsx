@@ -4,18 +4,19 @@ import { useRouter } from "next/navigation";
 import { joinQueue, leaveQueue } from "@/lib/actions/matchmakingActions";
 
 const POLL_INTERVAL_MS = 3000;
-const MAX_WAIT_MS = 120_000; // 2 minutes — matches the TTL on the WaitingRoom collection
+const MAX_WAIT_MS = 120_000;
 
 export default function WaitingPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"joining" | "waiting" | "matched" | "timeout" | "error">("joining");
   const [elapsed, setElapsed] = useState(0);
   const [dotCount, setDotCount] = useState(1);
+  const [learningLang, setLearningLang] = useState("—");
+  const [skillLevel, setSkillLevel] = useState(0);
   const pollRef  = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startRef = useRef<number>(Date.now());
 
-  // Read user info from sessionStorage (set during login/onboarding)
   const getUserInfo = () => ({
     userId:       sessionStorage.getItem("ll_user_id")       ?? sessionStorage.getItem("ll_user_name") ?? "anon",
     userName:     sessionStorage.getItem("ll_user_name")     ?? "User",
@@ -35,8 +36,26 @@ export default function WaitingPage() {
     router.push("/dashboard");
   };
 
+  const startPolling = (userId: string) => {
+    pollRef.current = setInterval(async () => {
+      const res = await fetch(`/api/match?userId=${encodeURIComponent(userId)}`);
+      const data = await res.json();
+      if (data.status === "matched") {
+        stopPolling();
+        setStatus("matched");
+        setTimeout(() => {
+          router.push(`/call?id=${data.sessionId}`);
+        }, 800);
+      }
+    }, POLL_INTERVAL_MS);
+  };
+
   useEffect(() => {
     const { userId, userName, learningLang, skillLevel } = getUserInfo();
+
+    // Surface to UI
+    setLearningLang(learningLang);
+    setSkillLevel(skillLevel);
 
     // Join the queue
     joinQueue(userId, userName, learningLang, skillLevel).then(({ error }) => {
@@ -44,7 +63,7 @@ export default function WaitingPage() {
       setStatus("waiting");
     });
 
-    // Elapsed timer + animated dots
+    // Elapsed timer + animated dots + timeout check
     timerRef.current = setInterval(() => {
       const secs = Math.floor((Date.now() - startRef.current) / 1000);
       setElapsed(secs);
@@ -58,22 +77,31 @@ export default function WaitingPage() {
     }, 1000);
 
     // Poll for a match
-    pollRef.current = setInterval(async () => {
-      const res = await fetch(`/api/match?userId=${encodeURIComponent(userId)}`);
-      const data = await res.json();
-
-      if (data.status === "matched") {
-        stopPolling();
-        setStatus("matched");
-        // Small delay so the user sees the "matched" state before navigating
-        setTimeout(() => {
-          router.push(`/call?id=${data.sessionId}`);
-        }, 800);
-      }
-    }, POLL_INTERVAL_MS);
+    startPolling(userId);
 
     return () => stopPolling();
   }, []);
+
+  const handleTryAgain = () => {
+    setStatus("joining");
+    setElapsed(0);
+    startRef.current = Date.now();
+    const { userId, userName, learningLang, skillLevel } = getUserInfo();
+    joinQueue(userId, userName, learningLang, skillLevel).then(() => setStatus("waiting"));
+
+    timerRef.current = setInterval(() => {
+      const secs = Math.floor((Date.now() - startRef.current) / 1000);
+      setElapsed(secs);
+      setDotCount(d => (d % 3) + 1);
+      if (Date.now() - startRef.current >= MAX_WAIT_MS) {
+        stopPolling();
+        leaveQueue(userId);
+        setStatus("timeout");
+      }
+    }, 1000);
+
+    startPolling(userId);
+  };
 
   const fmtElapsed = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
@@ -82,13 +110,6 @@ export default function WaitingPage() {
   };
 
   const dots = ".".repeat(dotCount);
-  const { learningLang, skillLevel } = (() => {
-    if (typeof window === "undefined") return { learningLang: "—", skillLevel: 0 };
-    return {
-      learningLang: sessionStorage.getItem("ll_learn_lang")    ?? "—",
-      skillLevel:   Number(sessionStorage.getItem("ll_skill_level") ?? 0),
-    };
-  })();
 
   return (
     <div style={{
@@ -209,22 +230,7 @@ export default function WaitingPage() {
               No one else was waiting at your level right now. Try again in a moment.
             </p>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-              <button onClick={() => {
-                setStatus("joining");
-                setElapsed(0);
-                startRef.current = Date.now();
-                const { userId, userName, learningLang, skillLevel } = getUserInfo();
-                joinQueue(userId, userName, learningLang, skillLevel).then(() => setStatus("waiting"));
-                pollRef.current = setInterval(async () => {
-                  const res = await fetch(`/api/match?userId=${encodeURIComponent(userId)}`);
-                  const data = await res.json();
-                  if (data.status === "matched") {
-                    stopPolling();
-                    setStatus("matched");
-                    setTimeout(() => router.push(`/call?id=${data.sessionId}`), 800);
-                  }
-                }, POLL_INTERVAL_MS);
-              }} style={{
+              <button onClick={handleTryAgain} style={{
                 background: "var(--accent-blue)", color: "#fff",
                 border: "none", borderRadius: 9, padding: "11px 26px",
                 fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",

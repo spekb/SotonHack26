@@ -97,8 +97,6 @@ function StepDots({ step, total }: { step: number; total: number }) {
   );
 }
 
-
-
 /* ── Step 2: Native language ── */
 function StepNative({ native, setNative, onNext, onBack }: {
   native: string; setNative: (v: string) => void; onNext: () => void; onBack: () => void;
@@ -420,7 +418,7 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
 }) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const cd = CEFR_DATA[cefr];
   const band = scoreBand(duoScore);
   const nFlag = ALL_LANGS.find(l => l.name === native)?.flag ?? "🏳️";
@@ -429,27 +427,18 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
 
   const handleContinue = async () => {
     setIsSubmitting(true);
-    try {
-      let skillIndex = 0;
-      if (duoScore == 0) {
-        switch (cefr) {
-          case "A1": skillIndex = 10;
-          case "A2": skillIndex = 40;
-          case "B1": skillIndex = 80;
-          case "B2": skillIndex = 115;
-          case "C1": skillIndex = 135;
-          case "C2": skillIndex = 160;
-        }
-      } else {
-        skillIndex = duoScore;
-      }
-      
-      sessionStorage.setItem("ll_native_lang", native);
-      sessionStorage.setItem("ll_learning_lang", learn);
-      sessionStorage.setItem("ll_cefr", cefr);
-      sessionStorage.setItem("ll_duo_score", duoScore.toString());
 
-      //console.log([userName, native, [learn], skillIndex]);
+    // Calculate skill index — use duoScore if provided, otherwise derive from CEFR midpoint
+    const skillIndex = duoScore > 0 ? duoScore : cefrMidScore(cefr);
+
+    // Save to sessionStorage FIRST — before any async calls that might fail
+    sessionStorage.setItem("ll_native_lang", native);
+    sessionStorage.setItem("ll_learn_lang", learn);
+    sessionStorage.setItem("ll_skill_level", String(skillIndex));
+    sessionStorage.setItem("ll_cefr", cefr);
+    sessionStorage.setItem("ll_duo_score", duoScore.toString());
+
+    try {
       await insertUserByDetails(userName, native, [learn], skillIndex, cefr);
       router.push("/dashboard");
     } catch (e) {
@@ -540,9 +529,7 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
             <>
               <svg
                 style={{ animation: "spin 1s linear infinite", width: 16, height: 16, marginRight: 8 }}
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
               >
                 <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" opacity="0.25" />
@@ -560,7 +547,6 @@ function StepConfirm({ userName, userEmail, native, learn, cefr, duoScore, onBac
   );
 }
 
-
 /* ── Main page ── */
 export default function OnboardingPage() {
   const [step, setStep]           = useState(1);
@@ -571,8 +557,7 @@ export default function OnboardingPage() {
   const [userName, setUserName]   = useState("");
   const [userEmail, setUserEmail] = useState("");
 
-  const router = useRouter()
-
+  const router = useRouter();
   const TOTAL = 5;
 
   useEffect(() => {
@@ -582,10 +567,6 @@ export default function OnboardingPage() {
     setUserEmail(email);
     if (name) setStep(2);
   }, []);
-
-  useEffect(() => {
-
-  }, [step])
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg-primary)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "24px 16px" }}>
