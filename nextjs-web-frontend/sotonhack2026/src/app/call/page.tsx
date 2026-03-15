@@ -3,6 +3,8 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { leaveQueue } from "@/lib/actions/matchmakingActions";
+import { generateNewPrompts } from "@/lib/actions/geminiAction";
+import { User, getUserByName } from "@/lib/actions/dbActions";
 
 const PROMPTS = [
   "Describe your morning routine using past tense verbs.",
@@ -26,6 +28,7 @@ function CallScreen() {
   const [activePrompt, setActivePrompt] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [userInitial, setUserInitial] = useState("?");
+  const [prompts, setPrompts] = useState<string[]>([]);
 
   // ── Assign call role ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -59,6 +62,16 @@ function CallScreen() {
   useEffect(() => {
     const t = setInterval(() => setElapsed((e) => e + 1), 1000);
     setUserInitial(sessionStorage.getItem("ll_user_name")?.[0]?.toUpperCase() ?? "?");
+    
+    // TODO: Change this oh please god. This is terrible no good awful code. But it is currently 01:19 and I cannot be fucked to do this properly. It better not crash.
+    getUserByName(sessionStorage.getItem("ll_user_name") as string).then((v) => {
+      generateNewPrompts(v?.cefr_level as ("A1" | "A2" | "B1" | "B2" | "C1" | "C2"), v?.learning_langs[0] as string, 5).then((p) => {
+        if (p.error == null) {
+          setPrompts(p.prompts);
+        }
+      })
+    })
+
     return () => clearInterval(t);
   }, []);
 
@@ -267,7 +280,7 @@ function CallScreen() {
               borderLeft: "2.5px solid var(--accent-blue)",
               borderRadius: 8, padding: "10px 14px", lineHeight: 1.5,
             }}>
-              "{PROMPTS[activePrompt]}"
+              "{prompts[activePrompt]}"
             </div>
           </div>
           <div style={{ flex: 1 }}>
@@ -275,10 +288,10 @@ function CallScreen() {
               MORE PROMPTS
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {PROMPTS.filter((_, i) => i !== activePrompt).slice(0, 4).map((p, i) => (
+              {prompts.filter((_, i) => i !== activePrompt).slice(0, 4).map((p, i) => (
                 <button
                   key={i}
-                  onClick={() => setActivePrompt(PROMPTS.indexOf(p))}
+                  onClick={() => setActivePrompt(prompts.indexOf(p))}
                   style={{
                     fontSize: 11, color: "var(--text-secondary)",
                     background: "var(--bg-secondary)", border: "0.5px solid var(--border-subtle)",
